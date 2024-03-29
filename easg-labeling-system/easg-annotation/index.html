@@ -1,0 +1,1793 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="utf-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>EASG Annotation Tool</title>
+    <script src="https://assets.crowd.aws/crowd-html-elements.js"></script>
+    <!-- <script src='https://cdnjs.cloudflare.com/ajax/libs/bootstrap/5.1.3/js/bootstrap.min.js'></script>
+    <script src='https://cdnjs.cloudflare.com/ajax/libs/jquery/3.6.0/jquery.min.js'></script> -->
+    <script src="https://easg-bucket-data-collection.s3.amazonaws.com/web/static/js/jquery.min.js"></script>
+    <script src="https://easg-bucket-data-collection.s3.amazonaws.com/web/static/js/bbox_annotator.js"></script>
+    <script src="https://easg-bucket-data-collection.s3.amazonaws.com/web/static/js/nouns.js"></script>
+	<script src="https://easg-bucket-data-collection.s3.amazonaws.com/web/static/js/verbs.js"></script>
+    <script src="https://easg-bucket-data-collection.s3.amazonaws.com/web/static/bootstrap/js/bootstrap.min.js"></script>
+    <link rel="stylesheet" href="https://easg-bucket-data-collection.s3.amazonaws.com/web/static/bootstrap/css/bootstrap.min.css">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/4.7.0/css/font-awesome.min.css">
+    <!-- <link rel="stylesheet" href="https://easg-bucket-data-collection.s3.amazonaws.com/web/static/css/styles.css"> -->
+</head>
+
+<body>
+    <style>
+        @import url('https://fonts.googleapis.com/css?family=Roboto');
+
+        * { box-sizing: border-box; }
+        body {
+          font: 16px Arial;
+        }
+        .autocomplete {
+          /*the container must be positioned relative:*/
+          position: relative;
+          display: inline-block;
+        }
+        input {
+          border: 1px solid transparent;
+          background-color: #f1f1f1;
+          padding: 10px;
+          font-size: 16px;
+        }
+        input[type=text] {
+          background-color: #f1f1f1;
+          width: 40%;
+          height: 100%;
+          padding-right: 10px;
+        }
+        input[type=submit] {
+          background-color: DodgerBlue;
+          color: #fff;
+        }
+        .autocomplete-items {
+          position: absolute;
+          border: 1px solid #d4d4d4;
+          border-bottom: none;
+          border-top: none;
+          z-index: 99;
+          /*position the autocomplete items to be the same width as the container:*/
+          top: 100%;
+          left: 0;
+          right: 0;
+        }
+        .autocomplete-items div {
+          padding: 10px;
+          cursor: pointer;
+          background-color: #fff;
+          border-bottom: 1px solid #d4d4d4;
+        }
+        .autocomplete-items div:hover {
+          /*when hovering an item:*/
+          background-color: #e9e9e9;
+        }
+        .autocomplete-active {
+          /*when navigating through the items using the arrow keys:*/
+          background-color: DodgerBlue !important;
+          color: #ffffff;
+        }
+        .image_frame {
+          background-size:cover;
+        }
+
+        .stepwizard-step p {
+          margin-top:10px;
+        }
+
+        .stepwizard-row {
+          display:table-row;
+        }
+
+        .stepwizard {
+          display:table;
+          width:100%;
+          position:relative;
+        }
+
+        .stepwizard-step button[disabled] {
+          opacity:1 !important;
+          filter:alpha(opacity=100) !important;
+        }
+
+        .stepwizard-row:before {
+          top:14px;
+          bottom:0;
+          position:absolute;
+          content:" ";
+          width:100%;
+          height:1px;
+          background-color:#ccc;
+          z-order:0;
+        }
+
+        .stepwizard-step {
+          display:table-cell;
+          text-align:center;
+          position:relative;
+        }
+
+        .btn-circle {
+          width:30px;
+          height:30px;
+          text-align:center;
+          padding:6px 0;
+          font-size:12px;
+          line-height:1.428571429;
+          border-radius:15px;
+        }
+
+    </style>
+
+    <header>
+        <nav class="navbar navbar-light navbar-expand-md" style="background-color:#d6dbe0;">
+            <div class="container-fluid"><a class="navbar-brand" href="#">EASG Annotation Tool</a><button class="navbar-toggler" data-toggle="collapse" data-target="#navcol-1"><span class="sr-only">Toggle navigation</span><span class="navbar-toggler-icon"></span></button>
+                <div class="collapse navbar-collapse"
+                    id="navcol-1">
+                    <ul class="nav navbar-nav">
+                        <li class="nav-item" role="presentation"><a id="nav-link-instructions" class="nav-link active" href="#" onclick="showInstructions()">Instructions</a></li>
+                    </ul>
+                </div>
+            </div>
+        </nav>
+        <div class="progress">
+            <div class="progress-bar bg-success progress-bar-striped progress-bar-animated" aria-valuenow="0" aria-valuemin="0" aria-valuemax="0" style="width: 0%;">0%</div>
+        </div>
+    </header>
+    <main style="margin:40px;">
+        <aside></aside>
+        <section id="roles-section">
+            <div class="container">
+                <div class="row">
+                    <div class="col">
+                        <h2 class="d-flex justify-content-center align-items-center align-content-center">Scene Captioning</h2>
+                    </div>
+                </div>
+                <div class="row" class="instructions-container" id="instruction-container-roles-section" style="display: block;">
+                    <div class="col">
+                        <p style="color:#494c49;">The goal of this step is to generate a meaningful description with a standard structure of the frame sequence content. In order to get the description, follow the steps below:&nbsp;<br></p>
+                        <ol>
+                            <li style="color:#494c49;">Look at the images and/or watch the clip;<br></li>
+                            <li style="color:#494c49;">Add information to the basic description through the "Add Annotations" button;<br></li>
+                            <li style="color:#494c49;">Select one of the proposed phrases compatible with the content of the sequence;<br></li>
+                            <li style="color:#494c49;">Replace "something" with one of the proposed objects, or start searching the object in taxonomy and select it from drop-down menu;<br></li>
+                            <li style="color:#494c49;">Identify if it is a new object instance or if it is related to an instance already selected previously.<br></li>
+							<li style="color:#494c49;">As soon as you have finished noting the available object relations, you can proceed to the next task by pressing <i>"Add Annotations"</i> and then <i>"No annotations to add"</i> button.<br></li>
+                        </ol>
+						
+						<p style="color:#494c49;">Note: In some (very rare!) cases the default narration may describe the wrong action. If you see, that the frames/video contain different action, please press "Report wrong narration" and select apropriate verb-noun pair describing the activity. &nbsp;<br></p>
+                        <div class="d-flex justify-content-center align-items-center align-content-center">
+                            <button class="btn btn-outline-secondary" onclick="hideInstructions()">
+                                Hide Instructions
+                            </button>
+                        </div>
+                    </div>
+                </div>
+            </div>
+            <div class="container" style="padding-top:2%;">
+                <div class="row">
+                    <div class="col-auto">
+                        <h5 id="current-narration-placeholder"><strong>Current narration:</strong></h5>
+                    </div>
+                    <div class="col-auto">
+                        <h5 id="current-narration-paragraph"></h5>
+                    </div>
+                    <div class="col-sm-4">
+                        <button id ="add-role-button" class="btn btn-success" type="button" data-toggle="modal" data-target="#modal2" onclick="showAddRoleModalInfo()"><i class="fa fa-plus"></i>&nbsp;Add Annotations</button>
+						
+                        <button id ="remove-roles-button" class="btn btn-danger" type="button" onclick="resetRoleAnnotations()"><i class="fa fa-times"></i>&nbsp;Reset Narration</button>
+						
+						<button id ="report-wrong-verb-noun" class="btn btn-danger" type="button" data-toggle="modal" data-target="#modal4" onclick="reportWrong()"><i class="fa fa-times"></i>&nbsp;Report Wrong Narration</button>
+					
+                    </div>
+                </div>
+            </div>
+            <div class="container" style="margin-top:20px;">
+                <div style="margin-top:10px;"></div>
+            </div>
+            <div class="container" style="padding:0px;padding-top:2%;margin-top:20px;">
+                <div class="row">
+                    <div class="col-lg-4">
+                        <canvas id="canvasPreFrameRoleSelection" height="270px" width="360px" style="background: url('{{ task.input.srcImages.preFrame.s3Uri | grant_read_access }}'); background-size: cover; width: 360px; height: 270px; border: 2px solid rgb(142, 137, 137);">
+                            Your browser does not support the HTML5 canvas tag.
+                        </canvas>
+                        {% assign imageWidth = task.input.srcImages.preFrame.width %}
+                        {% assign imageHeight = task.input.srcImages.preFrame.height %}
+                        {% for boxItem in task.input.srcImages.preFrame.bbox %}
+                            {% assign objectType = boxItem.object_type %}
+                            {% assign y = boxItem.bbox.y %}
+                            {% assign x = boxItem.bbox.x %}
+                            {% assign width = boxItem.bbox.width %}
+                            {% assign height = boxItem.bbox.height %}
+                            <script>
+                                var originalWidth = parseInt(JSON.parse('{{ task.input.srcImages.preFrame.width }}'.replace(/&quot;/g,'"')));
+                                var originalHeight = parseInt(JSON.parse('{{ task.input.srcImages.preFrame.height }}'.replace(/&quot;/g,'"')));
+                                if (originalHeight == 1080 && originalWidth == 1920){
+                                    document.getElementById("canvasPreFrameRoleSelection").style.height = "216px";
+                                    document.getElementById("canvasPreFrameRoleSelection").style.width = "384px";
+                                }
+                                else {
+                                    document.getElementById("canvasPreFrameRoleSelection").style.height = "270px";
+                                    document.getElementById("canvasPreFrameRoleSelection").style.width = "360px";
+                                }
+                                var canvasPreFrame = document.getElementById("canvasPreFrameRoleSelection");
+                                var ctxPreFrame = canvasPreFrame.getContext("2d");
+                
+                                var x = parseFloat('{{ x }}');
+                                var y = parseFloat('{{ y }}');
+                                var width = parseFloat('{{ width }}');
+                                var height = parseFloat('{{ height }}');
+                
+                                var canvasWidth = canvasPreFrame.width;
+                                var canvasHeight = canvasPreFrame.height;
+                                
+                                var imageWidth = parseFloat('{{ imageWidth }}');
+                                var imageHeight = parseFloat('{{ imageHeight }}');
+                
+                                var newX = (x * canvasWidth)/imageWidth;
+                                var newY = (y * canvasHeight)/imageHeight;
+                                var newWidth = (width * canvasWidth)/imageWidth; 
+                                var newHeight = (height * canvasHeight)/imageHeight;
+                
+                                if ('{{ objectType }}' !== 'both_hands') {
+									ctxPreFrame.beginPath();
+									ctxPreFrame.lineWidth = "2";
+					
+									var color = "black";
+									if ('{{ objectType }}' === 'object_of_change'){
+									color = "orange";
+									} 
+									else if ('{{ objectType }}' === 'right_hand' || '{{ objectType }}' === 'left_hand' ) {
+									color = "red";
+									} else {
+									color = "green";
+									}
+
+									var _ni = JSON.parse('{{ task.input.narrations_infos }}'.replace(/&quot;/g,'"'))[0];
+									
+									ctxPreFrame.strokeStyle = color;
+									ctxPreFrame.rect(newX,newY,newWidth,newHeight);
+									ctxPreFrame.font = "15px Arial";
+									ctxPreFrame.fillStyle = color;
+									if ('{{ objectType }}' === 'object_of_change'){
+										ctxPreFrame.fillText(_ni.direct_object, newX, newY);
+									}
+									else {
+										ctxPreFrame.fillText('{{ objectType }}', newX, newY);
+									}
+									ctxPreFrame.stroke();
+								}
+                            </script>
+                        {% endfor %}
+                    </div>
+                    <div class="col-lg-4">
+                        <canvas id="canvasPnrFrameRoleSelection" height="270px" width="360px" style="background: url('{{ task.input.srcImages.pnrFrame.s3Uri | grant_read_access }}'); background-size: cover; width: 360px; height: 270px; border: 2px solid rgb(142, 137, 137);">
+                            Your browser does not support the HTML5 canvas tag.
+                        </canvas>
+                        {% assign imageWidth = task.input.srcImages.pnrFrame.width %}
+                        {% assign imageHeight = task.input.srcImages.pnrFrame.height %}
+                        {% for boxItem in task.input.srcImages.pnrFrame.bbox %}
+                            {% assign objectType = boxItem.object_type %}
+                            {% assign y = boxItem.bbox.y %}
+                            {% assign x = boxItem.bbox.x %}
+                            {% assign width = boxItem.bbox.width %}
+                            {% assign height = boxItem.bbox.height %}
+                            <script>
+                                var originalWidth = parseInt(JSON.parse('{{ task.input.srcImages.pnrFrame.width }}'.replace(/&quot;/g,'"')));
+                                var originalHeight = parseInt(JSON.parse('{{ task.input.srcImages.pnrFrame.height }}'.replace(/&quot;/g,'"')));
+                                if (originalHeight == 1080 && originalWidth == 1920){
+                                    document.getElementById("canvasPnrFrameRoleSelection").style.height = "216px";
+                                    document.getElementById("canvasPnrFrameRoleSelection").style.width = "384px";
+                                }
+                                else {
+                                    document.getElementById("canvasPnrFrameRoleSelection").style.height = "270px";
+                                    document.getElementById("canvasPnrFrameRoleSelection").style.width = "360px";
+                                }
+                                var canvasPnrFrame = document.getElementById("canvasPnrFrameRoleSelection");
+                                var ctxPnrFrame = canvasPnrFrame.getContext("2d");
+                    
+                                var x = parseFloat('{{ x }}');
+                                var y = parseFloat('{{ y }}');
+                                var width = parseFloat('{{ width }}');
+                                var height = parseFloat('{{ height }}');
+                    
+                                var canvasWidth = canvasPnrFrame.width;
+                                var canvasHeight = canvasPnrFrame.height;
+                                
+                                var imageWidth = parseFloat('{{ imageWidth }}');
+                                var imageHeight = parseFloat('{{ imageHeight }}');
+                    
+                                var newX = (x * canvasWidth)/imageWidth;
+                                var newY = (y * canvasHeight)/imageHeight;
+                                var newWidth = (width * canvasWidth)/imageWidth; 
+                                var newHeight = (height * canvasHeight)/imageHeight;
+								
+								if ('{{ objectType }}' !== 'both_hands') {
+									ctxPnrFrame.beginPath();
+									ctxPnrFrame.lineWidth = "2";
+									var color = "black";
+									if ('{{ objectType }}' === 'object_of_change'){
+										color = "orange";
+									} 
+									else if ('{{ objectType }}' === 'right_hand' || '{{ objectType }}' === 'left_hand' ) {
+										color = "red";
+									} else {
+										color = "green";
+									}
+
+									var _ni = JSON.parse('{{ task.input.narrations_infos }}'.replace(/&quot;/g,'"'))[0];
+
+									ctxPnrFrame.strokeStyle = color;
+									ctxPnrFrame.rect(newX,newY,newWidth,newHeight);
+									ctxPnrFrame.font = "15px Arial";
+									ctxPnrFrame.fillStyle = color;
+									if ('{{ objectType }}' === 'object_of_change'){
+										ctxPnrFrame.fillText(_ni.direct_object, newX, newY);
+									}
+									else {
+										ctxPnrFrame.fillText('{{ objectType }}', newX, newY);
+									}
+									ctxPnrFrame.stroke();
+								}
+                            </script>
+                          {% endfor %}
+                    </div>
+                    <div class="col-lg-4">
+                        <canvas id="canvasPostFrameRoleSelection" height="270px" width="360px" style="background: url('{{ task.input.srcImages.postFrame.s3Uri | grant_read_access }}'); background-size: cover; width: 360px; height: 270px; border: 2px solid rgb(142, 137, 137);">
+                            Your browser does not support the HTML5 canvas tag.
+                        </canvas>
+                          {% assign imageWidth = task.input.srcImages.postFrame.width %}
+                          {% assign imageHeight = task.input.srcImages.postFrame.height %}
+                          {% for boxItem in task.input.srcImages.postFrame.bbox %}
+                            {% assign objectType = boxItem.object_type %}
+                            {% assign y = boxItem.bbox.y %}
+                            {% assign x = boxItem.bbox.x %}
+                            {% assign width = boxItem.bbox.width %}
+                            {% assign height = boxItem.bbox.height %}
+                            <script>
+                                var originalWidth = parseInt(JSON.parse('{{ task.input.srcImages.postFrame.width }}'.replace(/&quot;/g,'"')));
+                                var originalHeight = parseInt(JSON.parse('{{ task.input.srcImages.postFrame.height }}'.replace(/&quot;/g,'"')));
+                                if (originalHeight == 1080 && originalWidth == 1920){
+                                    document.getElementById("canvasPostFrameRoleSelection").style.height = "216px";
+                                    document.getElementById("canvasPostFrameRoleSelection").style.width = "384px";
+                                }
+                                else {
+                                    document.getElementById("canvasPostFrameRoleSelection").style.height = "270px";
+                                    document.getElementById("canvasPostFrameRoleSelection").style.width = "360px";
+                                }
+                                var canvasPostFrame = document.getElementById("canvasPostFrameRoleSelection");
+                                var ctxPostFrame = canvasPostFrame.getContext("2d");
+                    
+                                var x = parseFloat('{{ x }}');
+                                var y = parseFloat('{{ y }}');
+                                var width = parseFloat('{{ width }}');
+                                var height = parseFloat('{{ height }}');
+                    
+                                var canvasWidth = canvasPostFrame.width;
+                                var canvasHeight = canvasPostFrame.height;
+                                
+                                var imageWidth = parseFloat('{{ imageWidth }}');
+                                var imageHeight = parseFloat('{{ imageHeight }}');
+                    
+                                var newX = (x * canvasWidth)/imageWidth;
+                                var newY = (y * canvasHeight)/imageHeight;
+                                var newWidth = (width * canvasWidth)/imageWidth; 
+                                var newHeight = (height * canvasHeight)/imageHeight;
+								
+								if ('{{ objectType }}' !== 'both_hands') {
+									ctxPostFrame.beginPath();
+									ctxPostFrame.lineWidth = "2";
+									var color = "black";
+									if ('{{ objectType }}' === 'object_of_change'){
+										color = "orange";
+									} 
+									else if ('{{ objectType }}' === 'right_hand' || '{{ objectType }}' === 'left_hand' ) {
+										color = "red";
+									} else {
+										color = "green";
+									}
+
+									var _ni = JSON.parse('{{ task.input.narrations_infos }}'.replace(/&quot;/g,'"'))[0];
+
+									ctxPostFrame.strokeStyle = color;
+									ctxPostFrame.rect(newX,newY,newWidth,newHeight);
+									ctxPostFrame.font = "15px Arial";
+									ctxPostFrame.fillStyle = color;
+									if ('{{ objectType }}' === 'object_of_change'){
+										ctxPostFrame.fillText(_ni.direct_object, newX, newY);
+									}
+									else {
+										ctxPostFrame.fillText('{{ objectType }}', newX, newY);
+									}
+									ctxPostFrame.stroke();
+								}
+                            </script>
+                        {% endfor %}
+                    </div>
+                </div>
+            </div>
+            <div class="container d-flex justify-content-center align-items-center align-content-center" style="padding-top: 40px;">
+                <div class="row">
+                    <div class="col">
+                        <div class="modal fade" id="modal3" role="dialog" tabindex="-1">
+                            <div class="modal-dialog" role="document">
+                                <div class="modal-content">
+                                    <div class="modal-header">
+                                        {% assign clipUid = task.input.srcImages.preFrame.s3Uri | split: "/" | last | split: "_" | first %}
+                                        <h6 class="modal-title">Clip: <em id="clip-uid">{{ clipUid }}</em> </h6><button type="button" class="close" data-dismiss="modal" aria-label="Close"><span aria-hidden="true">×</span></button></div>
+                                    <div class="modal-body">
+                                        <video id="modal_video_2" width="100%" preload="auto" muted controls="false">
+                                            <source src="{{ task.input.clipS3Uri | grant_read_access }}" type="video/mp4"/>
+                                            <source src="{{ task.input.clipS3Uri | grant_read_access }}" type="video/webm"/>
+                                            <source src="{{ task.input.clipS3Uri | grant_read_access }}" type="video/ogg"/>
+                                            Your browser does not support the video tag.
+                                        </video>
+                                    </div>
+                                    <div class="modal-footer">
+                                        <button id="playVideoButton" class="btn btn-info" type="button" onclick="playActionClip('{{ task.input.srcImages.pnrFrame.clipFrameNo }}', '{{ task.input.fps }}', 'modal_video_2')">Play</button>
+                                        <button class="btn btn-light" type="button" data-dismiss="modal">Close</button>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                        <button class="btn btn-info btn-lg" type="button" data-toggle="modal" data-target="#modal3" onclick="playActionClip('{{ task.input.srcImages.pnrFrame.clipFrameNo }}', '{{ task.input.fps }}', 'modal_video_2')" style="width: 80px; height: 80px; font-size: 19px; border-radius: 40px;"><i class="fa fa-play" aria-hidden="true"></i> Clip</button>
+                    </div>
+                </div>
+            </div>
+            <div class="modal fade" id="modal2" role="dialog" tabindex="-1">
+                <div class="modal-dialog modal-lg" role="document">
+                    <div class="modal-content">
+                        <div class="modal-header">
+                            <h4 class="modal-title">Create narration details</h4><button type="button" class="close" data-dismiss="modal" aria-label="Close"><span aria-hidden="true">×</span></button></div>
+                        <div class="modal-body">
+                            <div class="container" style="padding-top:2%;margin-top:20px; display: none;">
+                                <div class="row">
+                                    <div class="col-auto d-inline-flex justify-content-center align-items-center align-content-center align-self-center">
+                                        <h5 class="col-auto d-inline-flex justify-content-center align-items-center align-content-center align-self-center" id="edited-narration"></h5>
+                                    </div>
+                                </div>
+                            </div>
+                            <div class="container" style="padding-top:2%;margin-top:20px;">
+                                <div class="row">
+                                    <div class="col-auto" id="roles-button-group-placeholder">
+                                        <p style="color:rgb(44, 116, 239)">Select a phrase compatible with the content of the sequence:</p>
+                                    </div>
+                                </div>
+                                <div id="roles-button-group" class="row" style="padding-top: 20px;">
+                                </div>
+                            </div>
+                            <div class="container" style="padding-top:2%;" id="new-object-instance-form">
+                                <div class="row" id="last-role-container">
+                                    <div class="col-auto d-inline-flex justify-content-center align-items-center align-content-center align-self-center" id="last-role-choice-container">
+                                        <p class="d-inline-flex justify-content-center align-items-center align-content-center align-self-center" id="last-role-choice-paragraph"></p>
+                                    </div>
+                                </div>
+                                <div class="row" style="padding-top: 20px;">
+                                    <div class="col-auto" id="candidate-buttons-container-placeholder">
+                                        <p style="color:rgb(44, 116, 239)">Replace <strong><span style="color: orange;">"something"</span></strong> with one of the proposed objects or search for one within the taxonomy:</p>
+                                    </div>
+                                </div>
+                                <div class="row" style="padding-top: 10px;">
+                                    <div class="col" style="margin-bottom: 20px; display: none;" id="candidate-buttons-container">
+                                        {% for obj in task.input.allObjects %}
+                                            {% assign objName = obj %}
+                                            <button id="button-candidate-object-{{obj}}" class="btn btn-secondary" type="button" style="margin:0px;margin-right:10px;" onclick="showObjectInstances('{{ obj }}')">
+                                                <span>{{ objName }}</span>
+                                            </button>
+                                        {% endfor %}
+										<!--
+                                        <button id="button-candidate-object-both_hands" class="btn btn-secondary" type="button" style="margin:0px;margin-right:10px;" onclick="showObjectInstances('both_hands')">
+                                            <span>both_hands</span>
+                                        </button>-->
+                                        <div class="row" style="padding-top: 10px;">
+                                            <div class="col"><input class="d-inline-flex" name="_customLabel" id="customLabel" type="text" placeholder="Search from taxonomy" style="margin-top:10px;width:70%;">
+                                                <script>
+                                                    //Function for Autocomplete Input
+                                                    function autocomplete(inp, arr) {
+                                                        /*the autocomplete function takes two arguments,
+                                                        the text field element and an array of possible autocompleted values:*/
+                                                        var currentFocus;
+                                                        /*execute a function when someone writes in the text f:*/
+                                                        inp.addEventListener("input", function(e) {
+                                                            var a, b, i, val = this.value;
+                                                            /*close any already open lists of autocompleted vals*/
+                                                            closeAllLists();
+                                                            if (!val) { return false;}
+                                                            currentFocus = -1;
+                                                            /*create a DIV element that will contain the items (vals):*/
+                                                            a = document.createElement("DIV");
+                                                            a.setAttribute("id", this.id + "autocomplete-list");
+                                                            a.setAttribute("class", "autocomplete-items");
+                                                            /*append the DIV element as a child of the autocomplete container:*/
+                                                            this.parentNode.appendChild(a);
+                                                            /*for each item in the array...*/
+                                                            for (i = 0; i < arr.length; i++) {
+                                                            /*check if the item starts with the same letters as the text field value:*/
+                                                            if (arr[i].substr(0, val.length).toUpperCase() == val.toUpperCase()) {
+                                                                /*create a DIV element for each matching element:*/
+                                                                b = document.createElement("DIV");
+                                                                /*make the matching letters bold:*/
+                                                                b.innerHTML = "<strong>" + arr[i].substr(0, val.length) + "</strong>";
+                                                                b.innerHTML += arr[i].substr(val.length);
+                                                                /*insert input field that will hold the current array item's val:*/
+                                                                b.innerHTML += "<input type='hidden' value='" + arr[i] + "'>";
+                                                                /*execute function when someone clicks on the item value (DIV elem):*/
+                                                                    b.addEventListener("click", function(e) {
+                                                                    /*insert the value for the autocomplete text field:*/
+                                                                    inp.value = this.getElementsByTagName("input")[0].value;
+                                                                    /*close list of autocompleted values,
+                                                                    (or other open lists of autocompleted values:*/
+                                                                    closeAllLists();
+                                                                });
+                                                                a.appendChild(b);
+                                                                }
+                                                            }
+                                                        });
+                                                        /*execute a function presses a key on the keyboard:*/
+                                                        inp.addEventListener("keydown", function(e) {
+                                                            var x = document.getElementById(this.id + "autocomplete-list");
+                                                            if (x) x = x.getElementsByTagName("div");
+                                                            if (e.keyCode == 40) {
+                                                            /*If DOWN is pressed,
+                                                            increase currentFocus:*/
+                                                            currentFocus++;
+                                                            /*make current item more visible:*/
+                                                            addActive(x);
+                                                            } else if (e.keyCode == 38) { //up
+                                                            /*If UP pressed,
+                                                            decrease currentFocus:*/
+                                                            currentFocus--;
+                                                            /*and make the current item more visible:*/
+                                                            addActive(x);
+                                                            } else if (e.keyCode == 13) {
+                                                            /*If ENTER key is pressed, prevent the form from being submitted,*/
+                                                            e.preventDefault();
+                                                            if (currentFocus > -1) {
+                                                                /*and simulate a click on the "active" item:*/
+                                                                if (x) x[currentFocus].click();
+                                                            }
+                                                            }
+                                                        });
+                                                        function addActive(x) {
+                                                            /*function to classify an item as "active":*/
+                                                            if (!x) return false;
+                                                            /*start by removing the "active" class on all items:*/
+                                                            removeActive(x);
+                                                            if (currentFocus >= x.length) currentFocus = 0;
+                                                            if (currentFocus < 0) currentFocus = (x.length - 1);
+                                                            /*add class "autocomplete-active":*/
+                                                            x[currentFocus].classList.add("autocomplete-active");
+                                                        }
+                                                        function removeActive(x) {
+                                                            /*function to remove the "active" class from all autocomplete items:*/
+                                                            for (var i = 0; i < x.length; i++) {
+                                                                x[i].classList.remove("autocomplete-active");
+                                                            }
+                                                        }
+                                                        function closeAllLists(elmnt) {
+                                                            /*close all autocomplete lists in doc,
+                                                            except the one passed as argument:*/
+                                                            var x = document.getElementsByClassName("autocomplete-items");
+                                                            for (var i = 0; i < x.length; i++) {
+                                                                if (elmnt != x[i] && elmnt != inp) {
+                                                                x[i].parentNode.removeChild(x[i]);
+                                                                }
+                                                            }
+                                                        }
+                                                        /*execute a function when someone clicks in the document:*/
+                                                        document.addEventListener("click", function (e) {
+                                                            closeAllLists(e.target);
+                                                        });
+                                                    }
+                                                    autocomplete(document.getElementById("customLabel"),possibileNouns);
+                                                </script>
+                                                <button class="btn btn-success" type="button" style="padding-left:10px;margin-left:10px;" onclick="addLabelFromButton()">Select</button>
+                                            </div>
+                                        </div>
+                                    </div>
+                                </div>
+                                <div class="container" style="padding-top:2%;margin-top:10px; margin-bottom:10px;" id ="object-instances-container">
+                                    <div class="row">
+                                        <div class="col-auto" id="object-instances-button-group-placeholder">
+                                            <p>Press New instance button if you hanven't added the selected object before:</p>
+                                        </div>
+                                    </div>
+                                    <div class="row">
+                                        <div class="col" style="margin-bottom: 10px;">
+                                            <div class="btn-group" role="group" id="object-instances-button-group">
+                                            </div>
+                                        </div>
+                                    </div>
+                                    <div class="row">
+                                        <div class="col-auto">
+                                            <button id="new-instance-button" class="btn btn-success" type="button" onclick="createNewObjectInstance()">New Instance</button>
+                                        </div>
+                                    </div>
+									
+									<div class="row">
+                                        <div class="col-auto">
+                                            <button id="finish-adding-annots" class="btn btn-success" type="button" onclick="finishRoleSelectionTask()" data-dismiss="modal">Finish adding annotations</button>
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                        <div class="modal-footer">
+                            <button class="btn btn-outline-danger" id="finish-role-selection-button" onclick="showConfirmationDialog()">No annotations to add</button>
+                            <button class="btn btn-light" type="button" data-dismiss="modal">Close</button>
+                        </div>
+                    </div>
+                </div>
+            </div>
+	<div class="modal fade" id="modal4" role="dialog" tabindex="-1">
+	<div class="modal-dialog modal-lg" role="document">
+		<div class="modal-content">
+		
+			<div class="modal-header">
+				<h4 class="modal-title">Correcting narration (verb-noun pair)</h4><button type="button" class="close" data-dismiss="modal" aria-label="Close"><span aria-hidden="true">×</span></button>
+			</div>
+			
+			<div class="modal-body">
+				<div class="container" style="padding-top:2%;" id="new-verb-noun-form">
+					<div class="col-auto">
+                        <h5 id="current-narration-placeholder"><strong>Current narration:</strong></h5>
+                    </div>
+                    <div class="col-auto">
+                        <h5 id="current-narration-paragraph-new-vn"></h5>
+                    </div>
+					<div class="row" style="padding-top: 20px;">
+						<div class="col-auto" id="candidate-buttons-container-placeholder">
+							<p style="color:rgb(44, 116, 239)">Replace VERB with one of the proposed verbs within the taxonomy:</p>
+						</div>
+					</div>
+					<div class="row" style="padding-top: 10px;">
+						<div class="col" style="margin-bottom: 20px; id="candidate-buttons-container">
+							<div class="row" style="padding-top: 10px;">
+								<div class="col"><input class="d-inline-flex" name="_customLabelVerb" id="customLabelVerb" type="text" placeholder="Search from taxonomy" style="margin-top:10px;width:70%;">
+									<script>
+										autocomplete(document.getElementById("customLabelVerb"),possibileVerbs);
+									</script>
+									<button id="new-verb-button" class="btn btn-light" type="button" style="padding-left:10px;margin-left:10px;" onclick="addVerbFromButton()">Confirm verb</button>
+								</div>
+							</div>
+					
+							<div class="row" style="padding-top: 40px;">
+								<div class="col-auto" id="candidate-buttons-container-placeholder">
+									<p style="color:rgb(44, 116, 239)">Replace NOUN with one of the proposed nouns within the taxonomy:</p>
+								</div>
+							</div>
+						
+							<div class="row" style="padding-top: 10px;">
+								<div class="col"><input class="d-inline-flex" name="_customLabelNoun" id="customLabelNoun" type="text" placeholder="Search from taxonomy" style="margin-top:10px;width:70%;">
+									<script>
+										autocomplete(document.getElementById("customLabelNoun"),possibileNouns);
+									</script>
+									<button id="new-noun-button" class="btn btn-light" type="button" style="padding-left:10px;margin-left:10px;" onclick="addNounFromButton()">Confirm noun</button>
+								</div>
+							</div>
+
+						</div>
+					</div>
+				</div>
+			</div>
+					
+			<div class="modal-footer">
+				<button class="btn btn-light" type="button" data-dismiss="modal4">Close</button>
+			</div>
+					
+		</div>
+			
+	</div>
+	</div>
+        </section>
+        <section id="groundings-section" style="display: none;">
+            <div class="container">
+                <div class="row">
+                    <div class="col">
+                        <h2 class="d-flex justify-content-center align-items-center align-content-center">Objects Grounding</h2>
+                    </div>
+                </div>
+                <div class="row" class="instructions-container" id="instruction-container-groundings-section" style="display: block;">
+                    <div class="col">
+                        <p style="color:#494c49;">In this task you will have to get the groundings of the object instance (to which a role is associated) within the 3 frames. You will need to draw bounding boxes for each object in the annotator object list.<br></p>
+                        <ol>
+                            <li style="color:#494c49;">Select the button related to the object instance.<br></li>
+                            <li style="color:#494c49;">Draw the boxes on each of the frames.<br></li>
+							<li style="color:#494c49;">Save boxes for annotated object instance, before annotating boxes for next object (if any).<br></li>
+                        </ol>
+						
+						<p style="color:#494c49;">Please, provide bounding box annotations which are <b>precise</b> and <b>consistent</b>:<br></p>
+						
+						<center><img src="https://easg-bucket-data-collection.s3.amazonaws.com/web/static/goodbad_od.jpg" alt="Good and bad bbox annotation examples" width="600"></center>
+
+                    </div>
+                    <div class="d-flex justify-content-center align-items-center align-content-center">
+                        <button class="btn btn-outline-secondary" onclick="hideInstructions()">
+                            Hide Instructions
+                        </button>
+                    </div>
+                </div>
+            </div>
+            <div class="container" style="margin-top:20px;">
+
+                <div class="row">
+                    <div class="col-lg-3">
+                        <h5>Objects to annotate:</h5>
+                    </div>
+                </div>
+                <div class="row">
+                    <div class="col">
+                        <div class="stepwizard">
+                            <div class="stepwizard-row" id="object-instances-button-group-container">
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+            <div id="groundings-main">
+                <div class="container" style="padding:0px;padding-top:2%;margin-top:20px;">
+                    <div class="row">
+                        <div class="col-lg-4">
+                            <div id="bbox_annotator_pre" style="display:inline-block"></div>
+                            <input id="annotation_data_pre" name="annotation_data_pre" type="hidden"/>
+                        </div>
+                        <div class="col-lg-4">
+                            <div id="bbox_annotator_pnr" style="display:inline-block"></div>
+                            <input id="annotation_data_pnr" name="annotation_data_pnr" type="hidden" />
+                        </div>
+                        <div class="col-lg-4">
+                            <div id="bbox_annotator_post" style="display:inline-block"></div>
+                            <input id="annotation_data_post" name="annotation_data_post" type="hidden"/>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+			<div class="modal fade" id="modal5" role="dialog" tabindex="-1" style="display: none;">
+				<div class="row">
+                    <div class="col">
+                            <div class="modal-dialog modal-lg" role="document">
+                                <div class="modal-content">
+                                    <div class="modal-header">
+                                        <h6 class="modal-title">Note </h6><button type="button" class="close" data-dismiss="modal" aria-label="Close"><span aria-hidden="true">×</span></button></div>
+                                    <div class="modal-body">
+                                        <p>Please, provide bounding box annotations before saving</p>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+					</div>
+            </div>
+
+            <div class="container" style="margin-top:30px;margin-bottom:30px;">
+                <div class="row">
+                    <div class="col d-flex justify-content-center"><button id="resetBoundingBoxButton" class="btn btn-warning" onclick="resetBoundingBoxes()" type="reset">Clear Bounding Boxes</button></div>
+                    <div class="col d-flex justify-content-center"><button id="saveBoundingBoxButton" class="btn btn-success" onclick="saveBoundingBoxes()" type="button">Save Bounding Boxes</button></div>
+                </div>
+            </div>
+        </section>
+    </main>
+    <footer class="d-inline-flex justify-content-center align-items-center align-content-center align-self-center" style="position:static;bottom:0;height:100px;width:100%;background-color:#d1cedd;">
+        <div class="btn-toolbar d-inline-flex justify-content-center align-items-center align-content-center align-self-center">
+            <div class="btn-group" role="group" style="padding:12px;"><button id="prevSectionButton" class="btn btn-secondary" type="button" style="display: none;" onclick="prevSection()">Prev Stage <i class="fa fa-solid fa-arrow-left"></i></button><button id="nextSectionButton" class="btn btn-secondary active" type="button" onclick="nextSection()">Next Stage <i class="fa fa-solid fa-arrow-right"></i></button></div>
+            <div class="btn-group" role="group" style="padding:12px;"><button id="totalResetButton" class="btn btn-danger" type="button" onclick="totalReset()">Reset <i class="fa fa-times-circle-o" aria-hidden="true"></i></button><button id="submitButton" class="btn btn-warning" type="button" onclick="handleSubmit()">Submit <i class="fa fa-solid fa-share-from-square"></i></button></div>
+        </div>
+    </footer>
+    
+    <crowd-form style="display: none;">
+        <input name="annotations" id="annotations" type="hidden">
+        <input name="timeElapsed" id="timeElapsed" type="hidden">
+		<input name="commentary" id="commentary" type="hidden">
+        <input name="subj" id="subj" type="hidden">
+        <input name="verb" id="verb" type="hidden">
+        <input name="dobj" id="dobj" type="hidden">
+        <input name="timestamp" id="timestamp" type="hidden">
+        <input name="clip_uid" id="clip_uid" type="hidden">
+        <input name="imageWidth" id="imageWidth" type="hidden">
+        <input name="imageHeight" id="imageHeight" type="hidden">
+		<input name="newverb" id="newverb" type="hidden">
+        <input name="newnoun" id="newnoun" type="hidden">
+        <input name="pnrFrameNumber" id="pnrFrameNumber" type="hidden">
+        <crowd-button form-action="submit" style="display: none;"></crowd-button>
+    </crowd-form>
+
+</body>
+
+</html>
+
+<script>
+    
+    var roles = new Array();
+    var instances = new Array();
+    var selectedRoles = new Array();
+    var frames = new Array();
+    var annotations = new Array();
+    var candidateRoles = new Array();
+    var lastCandidateRoles = new Array();
+    var objectList = new Array();
+    var currSelectedObject = null;
+    var enableBBAnnotation = false;
+    var currentRole = null;
+	
+	var numObjToGround = 0;
+	var numObjGrounded = 0;
+
+    var narration_infos = JSON.parse('{{ task.input.narrations_infos }}'.replace(/&quot;/g,'"'));
+
+    var originalWidth = parseInt(JSON.parse('{{ task.input.srcImages.preFrame.width }}'.replace(/&quot;/g,'"')));
+    var originalHeight = parseInt(JSON.parse('{{ task.input.srcImages.preFrame.height }}'.replace(/&quot;/g,'"')));
+
+    var selected_narration = null;
+    var edited_narration = null;
+    var selectedObject = null;
+    var currObjInstance = null;
+    var rolesQuestionListAlreadyCreated = false; 
+    var selectedRolesButtonsAlreadyCreated = false;
+    var labels = null;
+
+    var roleSelectionConverged = false;
+    var flagRoleToGrounding = false;
+    var groundingConverged = false;
+
+    var assignment_id = ""; //IR
+	var commentary = false;
+    var clipUid = '{{ task.input.clipUid }}'.split(".")[0];
+	
+	var task_input = ""//JSON.parse('{{ task.input }}') // this causes an error
+	console.log('task input: ', task_input)
+    
+    var currentSection = "roles";
+    var sectionMapping = { // Helper dict, used for navigating between stages.
+        "roles":[null,"groundings"],
+        "groundings":["roles",null]
+    }
+
+    var addRoleProcedureFinished = false;
+
+    // SCOD Annotatios from EGO4D
+    var preFrameScodValues = JSON.parse('{{ task.input.srcImages.preFrame.bbox }}'.replace(/&quot;/g,'"'));
+    var pnrFrameScodValues = JSON.parse('{{ task.input.srcImages.pnrFrame.bbox }}'.replace(/&quot;/g,'"'));
+    var postFrameScodValues = JSON.parse('{{ task.input.srcImages.postFrame.bbox }}'.replace(/&quot;/g,'"'));
+
+    // Read Tools
+    var toolsNames = [];
+	
+	console.log('PFSV', preFrameScodValues)
+
+    for (var i=0; i<preFrameScodValues.length; i++){
+        var element = preFrameScodValues[i];
+        if (preFrameScodValues[i].object_type === "tool"){
+            toolsNames.push(preFrameScodValues[i].structured_noun);
+        }
+    }
+	
+    for (var i=0; i<pnrFrameScodValues.length; i++){
+        var element = pnrFrameScodValues[i];
+        if (pnrFrameScodValues[i].object_type === "tool"){
+            toolsNames.push(pnrFrameScodValues[i].structured_noun);
+        }   
+    }
+    for (var i=0; i<postFrameScodValues.length; i++){
+        var element = postFrameScodValues[i];
+        if (postFrameScodValues[i].object_type === "tool"){
+            toolsNames.push(postFrameScodValues[i].structured_noun);
+        }   
+    }
+    
+    var preFrameUri = "{{ task.input.srcImages.preFrame.s3Uri | grant_read_access }}".replace(/&amp;/g, "&");
+    var pnrFrameUri = "{{ task.input.srcImages.pnrFrame.s3Uri | grant_read_access }}".replace(/&amp;/g, "&");
+    var postFrameUri = "{{ task.input.srcImages.postFrame.s3Uri | grant_read_access }}".replace(/&amp;/g, "&");
+    
+    var annotatorPre = new BBoxAnnotator({
+        url: preFrameUri,
+        input_method: 'fixed', // Can be one of ['text', 'select', 'fixed']
+        id: "#bbox_annotator_pre",
+        width: 400,
+        height: 300,
+        labels: "object",
+        show_label: false,
+        guide: true,
+        multiple: false,
+        onchange: function(entries) {
+          $("#annotation_data_pre").val(JSON.stringify(entries));
+		  $('#saveBoundingBoxButton').css({"display":"block"});
+        }
+    });
+    var annotatorPnr = new BBoxAnnotator({
+        url: pnrFrameUri,
+        input_method: 'fixed',
+        id: "#bbox_annotator_pnr",
+        width: 400,
+        height: 300,
+        labels: "object",
+        show_label: false,
+        guide: true,
+        multiple: false,
+        onchange: function(entries) {
+          $("#annotation_data_pnr").val(JSON.stringify(entries));
+		  $('#saveBoundingBoxButton').css({"display":"block"});
+        }
+    });
+    var annotatorPost = new BBoxAnnotator({
+        url: postFrameUri,
+        input_method: 'fixed',
+        id: "#bbox_annotator_post",
+        width: 400,
+        height: 300,
+        labels: "object",
+        show_label: false,
+        guide: true,
+        multiple: false,
+        onchange: function(entries) {
+          $("#annotation_data_post").val(JSON.stringify(entries));
+		  $('#saveBoundingBoxButton').css({"display":"block"});
+        }
+    });
+
+    var clipFrameNoPNR = parseInt('{{ task.input.srcImages.pnrFrame.clipFrameNo }}'); 
+	var fps = parseInt('{{ task.input.srcImages.pnrFrame.clipFrameNo }}'); // IR
+	var ts = 0.0;
+	ts = (clipFrameNoPNR/fps);
+
+    var subj = "";
+    var verb = "";
+    var dobj = "";
+	
+	var newverb = "none";
+	var newnoun = "none";
+	var verbselected = false;
+	var nounselected = false;
+
+    var firstGrounding = true;
+
+    class Narration {
+        constructor(narrData) {
+            this.narration_id = narrData.narration_id;
+            this.narration_base_text = "Camera Wearer"+" "+narrData.third_person_verb+" "+narrData.direct_object;
+            this.narration_text = "Camera Wearer"+" "+narrData.third_person_verb+" "+narrData.direct_object;
+            this.narration_subject = narrData.subject;
+            this.narration_verb = narrData.verb;
+            this.narration_direct_object = narrData.direct_object;
+            this.narration_action_clip_start_sec = narrData.action_clip_start_sec;
+            this.narration_action_clip_end_sec = narrData.action_clip_end_sec;
+            this.narration_objects = narrData.objects;
+            this.narration_questions = narrData.questions;
+            this.narration_binary_questions = narrData.binary_questions;
+            this.narration_roles = narrData.roles;
+            this.narration_mappings = narrData.mappings;
+        }
+    }
+
+    class BoundingBox {
+        constructor(object, left, top, width, height){
+            this.object = object;
+            this.left = left;
+            this.top = top; 
+            this.width = width;
+            this.height = height;
+        }
+    }
+
+    class FrameAnnotation {
+        constructor(frameType, bbs){
+            this.frameType = frameType; // PRE|PNR|POST
+            this.bbs = bbs; 
+        }
+    }
+
+    class RoleAnnotation {
+        constructor(role, frames){
+            this.role = role; 
+            this.frames = frames; 
+        }
+    }
+
+    class ObjectInstance{
+        constructor(obj, instanceNum){
+            this.obj = obj;
+            this.role = new Array();
+            this.instanceNum = instanceNum;
+            this.color = "#" +""+Math.floor(Math.random()*16777215).toString(16);
+            this.completeObjectInstanceName = obj+""+":"+""+JSON.stringify(instanceNum);
+        }
+    }
+    
+    function checkFlow(direction){
+        if (JSON.stringify(direction) === JSON.stringify('forward')) {
+            if (JSON.stringify(currentSection) === JSON.stringify('roles')){
+                if (!flagRoleToGrounding) {
+                    return false;
+                }
+                else {
+                    return true;
+                }
+            }
+        }
+    }
+	
+	function reportWrong(){
+		document.getElementById("current-narration-paragraph-new-vn").innerHTML = document.getElementById("current-narration-paragraph").innerHTML;
+		verbselected = false;
+		nounselected = false;
+        commentary = false;
+		var buttonsNewNoun = document.getElementById("new-noun-button");
+		buttonsNewNoun.setAttribute("class", "btn btn-light");
+		buttonsNewNoun.innerText = 'Select noun';
+		
+		var buttonsNewVerb = document.getElementById("new-verb-button");
+		buttonsNewVerb.setAttribute("class", "btn btn-light");
+		buttonsNewVerb.innerText = 'Select verb';
+		return true;
+    }
+
+    selected_narration = new Narration(narration_infos[0]);
+    subj = "CW";
+    verb = selected_narration.narration_verb;
+    dobj = selected_narration.narration_direct_object;
+    totalRoles =  Object.keys(selected_narration.narration_questions).length;
+    totalBinaryRoles =  Object.keys(selected_narration.narration_binary_questions).length;
+
+    function showAddRoleModalInfo(){
+	// this function is called when the ''add details'' is pressed.
+        var lastRoleContainer = document.getElementById("last-role-container");
+        lastRoleContainer.style.display = "none";
+        var newInstanceButton = document.getElementById("new-instance-button");
+        newInstanceButton.style.display = "none";
+		
+		document.getElementById("finish-adding-annots").style.display = "none";
+		
+        var rolesButtonGroup = document.getElementById("roles-button-group");
+        var rolesButtonGroupPlaceholder = document.getElementById("roles-button-group-placeholder");
+        rolesButtonGroup.style.display = "block";
+        rolesButtonGroupPlaceholder.style.display = "block";
+        var buttonsContainer = document.getElementById("candidate-buttons-container");
+        var buttonsContainerPlaceholder = document.getElementById("candidate-buttons-container-placeholder");
+        var buttonInstances = document.getElementById("object-instances-button-group");
+        var buttonInstancesPlaceholder = document.getElementById("object-instances-button-group-placeholder");
+        buttonsContainer.style.display = "none";
+        buttonsContainerPlaceholder.style.display = "none";
+        buttonInstances.style.display = "none";
+        buttonInstancesPlaceholder.style.display = "none";
+		
+		var finishRoleSelectionButton = document.getElementById('finish-role-selection-button');
+		finishRoleSelectionButton.style.display = "block";
+
+        var editedNarrationParagraph = document.getElementById("edited-narration");
+        editedNarrationParagraph.innerHTML = document.getElementById("current-narration-paragraph").value;
+
+        var objButtons = document.getElementById("candidate-buttons-container").getElementsByTagName("button");
+        for(var i=0; i<objButtons.length; i++) {
+            objButtons[i].setAttribute("class","btn btn-secondary");
+        }
+
+        var editedNarrationParagraph = document.getElementById("edited-narration");
+        editedNarrationParagraph.innerHTML = edited_narration;
+        var rolesButtonGroup = document.getElementById("roles-button-group");
+        rolesButtonGroup.style.display = "block";
+        rolesButtonGroup.innerHTML = "";
+        var mappings = selected_narration.narration_mappings;
+
+        if (!currentRole){
+            candidateRoles = selected_narration.narration_roles;
+        }
+        else if(currentRole && addRoleProcedureFinished){
+            addRoleProcedureFinished = false;
+            candidateRoles = mappings[currentRole];
+            lastCandidateRoles = candidateRoles;
+            if (selectedRoles.length > 0){
+                candidateRoles = candidateRoles.filter( function( el ) {
+                    return selectedRoles.indexOf( el ) < 0;
+                });
+            }
+            if (JSON.stringify(currentRole) === JSON.stringify("with")){
+                candidateRoles.push("with");
+            }
+        }
+        else {
+            if (lastCandidateRoles.length > 0){
+                candidateRoles = lastCandidateRoles;
+            }
+            else {
+                candidateRoles = selected_narration.narration_roles;
+            }
+        }
+        
+        if (candidateRoles.length > 0){
+            for (var rindex = 0; rindex < candidateRoles.length; rindex++){
+                var innerCol = document.createElement('div');
+                innerCol.setAttribute("class","col-lg-12"); 
+                var candidateRoleButton = document.createElement("button");
+                candidateRoleButton.setAttribute("class","btn btn-secondary");
+                candidateRoleButton.setAttribute("onclick","selectRole("+""+"'"+""+candidateRoles[rindex]+""+"'"+""+")");
+                candidateRoleButton.innerHTML = "<span>"+selected_narration.narration_base_text+" "+"<strong style='color:orange'>"+""+candidateRoles[rindex]+""+"</strong> something</span>";
+                candidateRoleButton.id="button-role-"+""+candidateRoles[rindex];
+                candidateRoleButton.style.marginRight = "5px";
+                candidateRoleButton.style.marginLeft = "5px";
+                candidateRoleButton.style.marginTop = "5px";
+                candidateRoleButton.style.marginBottom = "5px";
+                innerCol.appendChild(candidateRoleButton);
+                rolesButtonGroup.appendChild(innerCol);
+            }
+        }
+        else {
+            roleSelectionConverged = true;
+            document.getElementById("add-role-button").style.display = "none";
+        }
+    }
+
+    function selectRole(role){
+	// This function is called when one of proposed sentences is selected (i.e. CW pours sugar IN something)
+	// selectRole('in')
+        var rolesButtonGroup = document.getElementById("roles-button-group");
+        var rolesButtonGroupPlaceholder = document.getElementById("roles-button-group-placeholder");
+        var buttonInstances = document.getElementById("object-instances-button-group");
+        var buttonInstancesPlaceholder = document.getElementById("object-instances-button-group-placeholder");
+        var lastRoleContainer = document.getElementById('last-role-container');
+	
+		var finishRoleSelectionButton = document.getElementById('finish-role-selection-button');
+		finishRoleSelectionButton.style.display = "none";
+        
+        rolesButtonGroup.style.display = "none";
+        rolesButtonGroupPlaceholder.style.display = "none";
+        buttonInstances.style.display = "none";
+        buttonInstancesPlaceholder.style.display = "none";
+        var buttonsContainer = document.getElementById("candidate-buttons-container");
+        var buttonsContainerPlaceholder = document.getElementById("candidate-buttons-container-placeholder");
+        buttonsContainer.style.display = "block";
+        buttonsContainerPlaceholder.style.display = "block";
+        var newInstanceButton = document.getElementById("new-instance-button");
+        newInstanceButton.style.display = "none";
+        lastRoleContainer.style.display = "block";
+        currentRole = role;
+        document.getElementById("last-role-choice-paragraph").innerHTML = "<span>"+selected_narration.narration_base_text+" "+role+" "+"<strong style='color:orange'> something</strong></span>";
+        document.getElementById("button-role-"+""+role).setAttribute("class","btn btn-success");
+    }
+
+    function resetBoundingBoxes(){
+        annotatorPre.clear_all();
+        annotatorPnr.clear_all();
+        annotatorPost.clear_all();
+        $('#saveBoundingBoxButton').css({"display":"none"});
+        firstGrounding = true;
+		numObjGrounded = 0;
+    }    
+    
+    function saveBoundingBoxes(){
+		frames = new Array();
+		var noBox = true;
+        for (var i=0; i<instances.length; i++){
+            if (JSON.stringify(currSelectedObject) === JSON.stringify(instances[i].completeObjectInstanceName)){
+                currentRole = instances[i].role[0];
+            }
+        }
+        if (annotatorPre.entries.length > 0){
+            var entry = annotatorPre.entries[0];
+            var bbPre = new BoundingBox(currSelectedObject,entry.left,entry.top,entry.width,entry.height);
+            frames.push(new FrameAnnotation('pre',bbPre));
+			noBox = false;
+        }
+
+        if (annotatorPnr.entries.length > 0){
+            var entry = annotatorPnr.entries[0];
+            var bbPnr = new BoundingBox(currSelectedObject,entry.left,entry.top,entry.width,entry.height);
+            frames.push(new FrameAnnotation('pnr',bbPnr));
+			noBox = false;
+        }
+        
+        if (annotatorPost.entries.length > 0){
+            var entry = annotatorPost.entries[0];
+            var bbPost = new BoundingBox(currSelectedObject,entry.left,entry.top,entry.width,entry.height);
+            frames.push(new FrameAnnotation('post',bbPost));
+			noBox = false;
+        }
+		console.log('Num toground and grounded', numObjToGround, numObjGrounded)
+		if (noBox==true){
+			//bbWorkAround = new BoundingBox(currSelectedObject,entry.left,entry.top,entry.width,entry.height);
+			$('#modal5').modal('show');
+		}
+		else{
+			annotations.push(new RoleAnnotation(currentRole,frames));
+			numObjGrounded++;
+			if (numObjGrounded == numObjToGround){
+				$("#submitButton").css({"display":"block"});
+			}
+			$("#saveBoundingBoxButton").css({"display":"none"});
+			$("#resetBoundingBoxButton").css({"display":"block"});
+		}
+    }
+
+    function saveRoleAnnotation(role){
+        $('#modal2').modal('hide');
+        selectedRoles.push(role); // array with preps?
+
+        document.getElementById("current-narration-paragraph").innerHTML = document.getElementById("current-narration-paragraph").innerHTML+" "+currObjInstance.role+" "+"<span style=color:"+""+currObjInstance.color+""+">"+" "+currObjInstance.obj+" "+"</span>";
+        selected_narration.narration_text = edited_narration;
+        addRoleProcedureFinished = true;
+        objectList.push(JSON.stringify(currObjInstance.obj));
+    }
+
+    function resetRoleAnnotations(){
+        document.getElementById("current-narration-paragraph").innerHTML = selected_narration.narration_base_text;
+        selected_narration.narration_text = selected_narration.narration_base_text;
+        instances = new Array();
+        selectedRoles = new Array();
+        lastCandidateRoles = new Array();
+        candidateRoles =selected_narration.narration_roles;
+        objectList = new Array();
+        currentRole = null;
+        currObjInstance = null;
+        edited_narration = selected_narration.narration_base_text;
+        flagRoleToGrounding = false;
+        firstGrounding = true;
+		annotations = new Array(); // IR: added this! 
+
+        showButton('add-role-button');
+        hideButton('submitButton');
+        hideButton('nextSectionButton');
+        hideButton('remove-roles-button');
+    }
+
+    function createNewObjectInstance(){
+	// This function is called when the "New instance" is pressed.
+		console.log("createNewObjectInstance: ", selectedObject, currentRole)
+        if (selectedObject && currentRole){
+			var iii = 0;
+			
+			for (let index = 0; index < instances.length; index++) {
+                const element = instances[index];
+                if (JSON.stringify(element.obj) === JSON.stringify(selectedObject)){
+                    iii = iii+1;
+                }
+            }
+			if (selectedObject == dobj){
+				iii = iii+1;
+			}
+            var objInstance = new ObjectInstance(selectedObject, iii);// e.g. table:0
+            objInstance.role.push(currentRole); // role is an array
+            currObjInstance = objInstance;
+            instances.push(objInstance); // instances is a global var, which is an array.
+        }
+
+        document.getElementById("edited-narration").innerHTML = document.getElementById("edited-narration").innerHTML+" "+currObjInstance.role+" "+"<span style=color:"+""+currObjInstance.color+""+">"+" "+currObjInstance.obj+" "+"</span>";
+        edited_narration = edited_narration+" "+currObjInstance.role+" "+currObjInstance.obj;
+    
+        if (JSON.stringify(currObjInstance.obj) !== JSON.stringify('both_hands') && JSON.stringify(currObjInstance.obj) !== JSON.stringify('right_hand') && JSON.stringify(currObjInstance.obj) !== JSON.stringify('left_hand') && !toolsNames.includes(currObjInstance.obj)){
+            flagRoleToGrounding = true; // If object is not "hand" and not "tool", then it should be grounded
+        }
+
+        if (JSON.stringify(currObjInstance.obj) === JSON.stringify('both_hands') || JSON.stringify(currObjInstance.obj) === JSON.stringify('right_hand') || JSON.stringify(currObjInstance.obj) === JSON.stringify('left_hand') || toolsNames.includes(currObjInstance.obj)) {
+		// If the obj is hand (or tool) is selected, then the annotations are added automatically with the script below
+            var hands_frames = new Array();
+            for (let index = 0; index < preFrameScodValues.length; index++) {
+			// This loop is across all the bboxes pre-loaded from the ego4d-scod jsons. Iterate through all bboxes and:
+                const element = preFrameScodValues[index];
+                if (JSON.stringify(element.object_type) === JSON.stringify(currObjInstance.obj) || element.object_type === "tool"){ // if the bbox type is TOOL or bbox type SIMILAR TO currObjInstance.obj, then we add pre-loaded bbox to the annotaions.
+                    var bbPre = new BoundingBox(currObjInstance.obj,element.bbox['x'],element.bbox['y'],element.bbox['width'],element.bbox['height']);
+                    hands_frames.push(new FrameAnnotation('pre',bbPre));
+                }
+            }
+            for (let index = 0; index < pnrFrameScodValues.length; index++) {
+                const element = pnrFrameScodValues[index];
+                if (JSON.stringify(element.object_type) === JSON.stringify(currObjInstance.obj) || element.object_type === "tool"){
+                    var bbPre = new BoundingBox(currObjInstance.obj,element.bbox['x'],element.bbox['y'],element.bbox['width'],element.bbox['height']);
+                    hands_frames.push(new FrameAnnotation('pnr',bbPre));
+                }
+            }
+            for (let index = 0; index < postFrameScodValues.length; index++) {
+                const element = postFrameScodValues[index];
+                if (JSON.stringify(element.object_type) === JSON.stringify(currObjInstance.obj) || element.object_type === "tool"){
+                    var bbPre = new BoundingBox(currObjInstance.obj,element.bbox['x'],element.bbox['y'],element.bbox['width'],element.bbox['height']);
+                    hands_frames.push(new FrameAnnotation('post',bbPre));
+                }
+            }
+            annotations.push(new RoleAnnotation(currentRole,hands_frames));
+        }
+
+        saveRoleAnnotation(currentRole);
+    }
+
+    function selectInstance(obj,instanceNumber, currentRole){
+	// Function to handle adding the existing object to annotation
+        if (selectedObject && currentRole){
+            for (let index = 0; index < instances.length; index++) {
+                const element = instances[index];
+                if (JSON.stringify(element.obj) === JSON.stringify(obj) && JSON.stringify(instanceNumber) === JSON.stringify(element.instanceNum)){
+                    element.role.push(currentRole);
+                    currObjInstance = element;
+                }
+            }
+        }
+        document.getElementById("edited-narration").innerHTML = document.getElementById("edited-narration").innerHTML+" "+currObjInstance.role+" "+"<span style=color:"+""+currObjInstance.color+""+">"+" "+currObjInstance.obj+" "+"</span>";
+        edited_narration = edited_narration+" "+currObjInstance.role+" "+currObjInstance.obj;   
+        if (JSON.stringify(currObjInstance.obj) !== JSON.stringify('both_hands') && JSON.stringify(currObjInstance.obj) !== JSON.stringify('right_hand') && JSON.stringify(currObjInstance.obj) !== JSON.stringify('left_hand') && !toolsNames.includes(currObjInstance.obj)){
+            flagRoleToGrounding = true;
+        }
+
+        if (JSON.stringify(currObjInstance.obj) === JSON.stringify('both_hands') || JSON.stringify(currObjInstance.obj) === JSON.stringify('right_hand') || JSON.stringify(currObjInstance.obj) === JSON.stringify('left_hand') || toolsNames.includes(currObjInstance.obj)) {
+            var hands_frames = new Array();
+            for (let index = 0; index < preFrameScodValues.length; index++) {
+                const element = preFrameScodValues[index];
+                if (JSON.stringify(element.object_type) === JSON.stringify(currObjInstance.obj)){
+                    var bbPre = new BoundingBox(currObjInstance.obj,element.bbox['x'],element.bbox['y'],element.bbox['width'],element.bbox['height']);
+                    hands_frames.push(new FrameAnnotation('pre',bbPre));
+                }
+            }
+            for (let index = 0; index < pnrFrameScodValues.length; index++) {
+                const element = pnrFrameScodValues[index];
+                if (JSON.stringify(element.object_type) === JSON.stringify(currObjInstance.obj)){
+                    var bbPre = new BoundingBox(currObjInstance.obj,element.bbox['x'],element.bbox['y'],element.bbox['width'],element.bbox['height']);
+                    hands_frames.push(new FrameAnnotation('pnr',bbPre));
+                }
+            }
+            for (let index = 0; index < postFrameScodValues.length; index++) {
+                const element = postFrameScodValues[index];
+                if (JSON.stringify(element.object_type) === JSON.stringify(currObjInstance.obj)){
+                    var bbPre = new BoundingBox(currObjInstance.obj,element.bbox['x'],element.bbox['y'],element.bbox['width'],element.bbox['height']);
+                    hands_frames.push(new FrameAnnotation('post',bbPre));
+                }
+            }
+            annotations.push(new RoleAnnotation(currentRole,hands_frames));
+        }
+		console.log('selectInstance')
+		console.log(JSON.stringify(annotations))
+		
+        saveRoleAnnotation(currentRole);
+    }
+
+    function showObjectInstances(obj){
+	// This function is called when the role (PREPOSITION) is already selected and we need to select the object from the list of proposed objs
+	// showObjectInstances('right_hand') or showObjectInstances('table')
+        var rolesButtonGroup = document.getElementById("roles-button-group");
+        var rolesButtonGroupPlaceholder = document.getElementById("roles-button-group-placeholder");
+        var buttonInstances = document.getElementById("object-instances-button-group");
+        var buttonInstancesPlaceholder = document.getElementById("object-instances-button-group-placeholder");
+        rolesButtonGroup.style.display = "none";
+        rolesButtonGroupPlaceholder.style.display = "none";
+        buttonInstances.style.display = "block";
+        buttonInstancesPlaceholder.style.display = "block";
+        var buttonsContainer = document.getElementById("candidate-buttons-container");
+        var buttonsContainerPlaceholder = document.getElementById("candidate-buttons-container-placeholder");
+        buttonsContainer.style.display = "none";
+        buttonsContainerPlaceholder.style.display = "none";
+        var newInstanceButton = document.getElementById("new-instance-button");
+        newInstanceButton.style.display = "block";
+		
+		document.getElementById("last-role-choice-paragraph").innerHTML = "<span>"+selected_narration.narration_base_text+" "+currentRole+" "+"<strong style='color:orange'> " +obj+"</strong></span>"; 
+
+        var instancesContainer = document.getElementById("object-instances-container");
+        document.getElementById("button-candidate-object-"+""+obj).setAttribute("class","btn btn-success");
+
+        selectedObject = obj;
+        var parentButtonGroupContainer = document.getElementById("object-instances-button-group");
+        parentButtonGroupContainer.innerHTML = "";
+        var matchCount = 0; 
+        for (var i=0; i<instances.length; i++){
+            if (JSON.stringify(instances[i].obj) === JSON.stringify(selectedObject)){
+                matchCount = matchCount + 1;
+				console.log('matchCount', matchCount)
+                var instanceButton = document.createElement("button");
+                instanceButton.setAttribute("class","btn btn-outline-secondary");
+                instanceButton.style.marginRight = "10px";
+                
+				instanceButton.setAttribute("onclick", "selectInstance('" + instances[i].completeObjectInstanceName + "', '" + matchCount + "', '" + currentRole + "')");
+                instanceButton.innerHTML = "<span style="+""+'"color:'+""+instances[i].color+'"'+""+">"+""+instances[i].completeObjectInstanceName+""+"</span>";
+                parentButtonGroupContainer.appendChild(instanceButton);
+            }
+        }
+    }
+
+    function addLabelFromButton(){
+        var objName = customLabel.value;
+        if (objName !== undefined && objName != null){
+            selectedObject = objName;
+            customLabel.value = "";
+        }
+        showObjectInstances(objName);
+    }
+	
+	function addVerbFromButton(){
+        var verbName = customLabelVerb.value;
+        if (possibileVerbs.includes(verbName) && verbName !== undefined && verbName != null){
+			verbselected = true;
+			newverb = verbName;
+			var buttonsNewVerb = document.getElementById("new-verb-button");
+			buttonsNewVerb.setAttribute("class", "btn btn-success");
+			buttonsNewVerb.innerText = 'Verb selected';
+        } else {
+			return;
+		}
+		if (verbselected && nounselected){
+			commentary = true;
+			showButton("submitButton");
+			hideButton("nextSectionButton");
+			hideButton("add-role-button"); // Maybe it make sense to comment
+			$('#modal4').modal('hide');
+			document.getElementById("current-narration-paragraph").innerHTML = "Camera Wearer" + " " + newverb + " " + newnoun;
+		}
+    }
+	
+	function addNounFromButton(){
+        var nounName = customLabelNoun.value;
+        if (possibileNouns.includes(nounName) && nounName !== undefined && nounName != null){
+			nounselected = true;
+			newnoun = nounName;
+			var buttonsNewNoun = document.getElementById("new-noun-button");
+			buttonsNewNoun.setAttribute("class", "btn btn-success");
+			buttonsNewNoun.innerText = 'Noun selected';
+        } else {
+			return;
+		}
+		if (verbselected && nounselected){
+			commentary = true;
+			showButton("submitButton");
+			hideButton("nextSectionButton");
+			hideButton("add-role-button"); 
+			$('#modal4').modal('hide');
+			document.getElementById("current-narration-paragraph").innerHTML = "Camera Wearer" + " " + newverb + " " + newnoun;
+		}
+    }
+
+    function recalculatePoints(data){
+        for (let index = 0; index < data.length; index++) {
+            const roleAnnotation = data[index];
+            for (let frameIndex = 0; frameIndex < roleAnnotation.frames.length; frameIndex++) {
+                const frame = roleAnnotation.frames[frameIndex];
+                if (JSON.stringify(frame.bbs.object) !== JSON.stringify('both_hands') && JSON.stringify(frame.bbs.object) !== JSON.stringify('right_hand') && JSON.stringify(frame.bbs.object) !== JSON.stringify('left_hand') && !toolsNames.includes(frame.bbs.object)){
+                    var x2, y2;
+                    x2 = frame.bbs.left + frame.bbs.width;
+                    y2 = frame.bbs.top + frame.bbs.height;
+
+                    data[index].frames[frameIndex].bbs.left = (frame.bbs.left*originalWidth)/400;
+                    data[index].frames[frameIndex].bbs.top = (frame.bbs.top*originalHeight)/300;
+
+                    x2 = (x2*originalWidth)/400;
+                    y2 = (y2*originalHeight)/300;
+
+                    var newWidth, newHeight;
+
+                    newWidth = x2 - data[index].frames[frameIndex].bbs.left; 
+                    newHeight = y2 - data[index].frames[frameIndex].bbs.top;
+
+                    data[index].frames[frameIndex].bbs.width = newWidth;
+                    data[index].frames[frameIndex].bbs.height = newHeight;
+                }
+            }
+        }
+        return data;
+    }
+	
+	function showConfirmationDialog() {
+	  var rolesButtonGroup = document.getElementById("roles-button-group");
+	var rolesButtonGroupPlaceholder = document.getElementById("roles-button-group-placeholder"); // roles-button-group-placeholder
+	var buttonInstances = document.getElementById("object-instances-button-group");
+	var buttonInstancesPlaceholder = document.getElementById("object-instances-button-group-placeholder");
+	var lastRoleContainer = document.getElementById('last-role-container');
+	var finishRoleSelectionButton = document.getElementById('finish-role-selection-button'); 
+	finishRoleSelectionButton.style.display = "none";
+
+	rolesButtonGroup.style.display = "none";
+	rolesButtonGroupPlaceholder.InnerHTML = "Are you sure there is no annotation to add?";
+	buttonInstances.style.display = "none";
+	buttonInstancesPlaceholder.InnerHTML = "Are you sure there is no annotation to add?";
+	var buttonFinishAdding = document.getElementById("finish-adding-annots"); 
+	buttonFinishAdding.style.display = "block";
+
+    }
+
+    function handleSubmit(){
+        console.log("submit");
+        annotations = recalculatePoints(annotations);
+        console.log(JSON.stringify(annotations));
+        document.getElementById('annotations').value = JSON.stringify(annotations);
+        document.getElementById('commentary').value = commentary;
+		document.getElementById('subj').value = subj;
+        document.getElementById('verb').value = verb;
+        document.getElementById('dobj').value = dobj;
+        document.getElementById('timestamp').value = ts; 
+        document.getElementById('clip_uid').value = clipUid;
+        document.getElementById('imageWidth').value = parseInt(originalWidth);
+        document.getElementById('imageHeight').value = parseInt(originalHeight);
+        document.getElementById('pnrFrameNumber').value = clipFrameNoPNR;
+		
+		document.getElementById('newverb').value = newverb;
+		document.getElementById('newnoun').value = newnoun;
+		
+		console.log(commentary, subj, verb, dobj, ts, clipUid,originalWidth, originalHeight, clipFrameNoPNR, newverb, newnoun);		
+        document.querySelector('crowd-form').submit();
+    }
+
+    function displayRoleSelectionSection(){
+        var narration_text = selected_narration.narration_text;
+        var curentNarrationParagraph = document.getElementById("current-narration-paragraph");
+        curentNarrationParagraph.innerHTML = narration_text;
+    }
+
+    function hexToRGB(hex) {
+        const r = parseInt(hex.slice(1, 3), 16);
+        const g = parseInt(hex.slice(3, 5), 16);
+        const b = parseInt(hex.slice(5, 7), 16);
+        return `rgb(${r}, ${g}, ${b})`;
+    }
+
+    function selectObjectLabel(obj,color){
+        console.log("log label");
+        console.log(obj,color);
+        $("#saveBoundingBoxButton").css({"display":"none"});
+        annotatorPre.clear_all();
+        annotatorPnr.clear_all();
+        annotatorPost.clear_all();
+
+        $(".annotated_bounding_box").css("border",color);
+        currSelectedObject = obj;
+        enableBBAnnotation = true;
+        annotatorPre.labels = currSelectedObject;
+        annotatorPnr.labels = currSelectedObject;
+        annotatorPost.labels = currSelectedObject;
+
+        var button = document.getElementById("object-instance-button-"+""+obj);
+        button.setAttribute("class", "btn btn-success btn-circle");
+
+    }
+
+    function displayObjectInstancesToAnnotate(){
+        var buttonGroup = document.getElementById("object-instances-button-group-container");
+        buttonGroup.innerHTML = "";
+
+        for (var i=0; i<instances.length; i++){
+            if (JSON.stringify(instances[i].obj) !== JSON.stringify("both_hands") && JSON.stringify(instances[i].obj) !== JSON.stringify("right_hand") && JSON.stringify(instances[i].obj) !== JSON.stringify("left_hand") && !toolsNames.includes(instances[i].obj)){
+				numObjToGround++;
+                var stepWizardStep = document.createElement("div");
+                stepWizardStep.setAttribute("class", "stepwizard-step");
+
+                var objInstanceButton = document.createElement("button");
+                objInstanceButton.id = "object-instance-button-"+""+instances[i].completeObjectInstanceName;
+                objInstanceButton.setAttribute("class","btn btn-default btn-circle");
+                objInstanceButton.setAttribute("onclick","selectObjectLabel("+""+"'"+""+instances[i].completeObjectInstanceName+""+"'"+""+","+"'"+""+hexToRGB(instances[i].color)+""+"'"+""+")");
+                stepWizardStep.appendChild(objInstanceButton);
+
+                var objInstancePar = document.createElement("p");
+                objInstancePar.innerHTML = "<span style="+""+"color:"+""+instances[i].color+""+">"+""+instances[i].completeObjectInstanceName+""+"</span>";
+                stepWizardStep.appendChild(objInstancePar);
+
+                buttonGroup.appendChild(stepWizardStep);
+            }
+        }
+    }
+
+    function playActionClip(frameNumber, fps, video_id) {
+        var video_id = video_id;
+        var videoplayer = document.getElementById(video_id);
+        var startTime = (frameNumber/fps) - 2;
+        var endTime = (frameNumber/fps) + 2;
+        ts = (frameNumber/fps);
+        videoplayer.currentTime = startTime;
+        videoplayer.play();
+        videoplayer.removeAttribute("controls");
+
+        //call function to stop player after given interval
+        var stopVideoAfter = (endTime - startTime) * 1000;  //* 1000, because Timer is in ms
+        setTimeout(function(){
+            document.getElementById(video_id).pause();
+            }, stopVideoAfter);
+    }
+
+    function updateProgressBar(val){
+        var progressBar = $(".progress-bar");
+        progressBar.attr("aria-valuenow",JSON.stringify(val));
+        progressBar.attr("aria-valuemax",JSON.stringify(val));
+        progressBar.css({"width":JSON.stringify(val)+""+"%"});
+        progressBar.html(JSON.stringify(val)+""+"%");
+    }
+
+
+    function nextSection(){ // This function is called when "Next section" pressed.
+        if (checkFlow('forward')){
+            if (sectionMapping[currentSection][1] !== null){
+                currentSection = sectionMapping[currentSection][1];
+            }
+            showCurrentSection();
+        }
+        else {
+            if (JSON.stringify(currentSection) === JSON.stringify('narrations')){
+                alert("Please select a narration to go to the next task");
+            }
+            else if (JSON.stringify(currentSection) === JSON.stringify('roles')){
+                alert("There are no object instances to annotate");
+            }
+        }
+    }
+
+    function prevSection(){
+        if (sectionMapping[currentSection][0] !== null){
+            currentSection = sectionMapping[currentSection][0];
+        }
+        showCurrentSection();
+    }
+
+    function showRolesSection(){
+        $("#roles-section").css({"display":"block"});
+        $("#groundings-section").css({"display":"none"});
+        document.getElementById('prevSectionButton').style.display = "none";
+
+
+        if (!edited_narration){
+            edited_narration = selected_narration.narration_text;
+        }
+
+        if (selectedRoles.length > 0){
+            document.getElementById('nextSectionButton').style.display = "block";
+        }
+
+        displayRoleSelectionSection();
+        currentSection = "roles";
+        updateProgressBar(50);
+    }
+
+    function showGroundingsSection(){// this is only for bbox annotations
+		console.log('current annots', annotations)
+        $("#roles-section").css({"display":"none"});
+        $("#groundings-section").css({"display":"block"});
+        $('#nextSectionButton').css({"display":"none"});
+        $('#prevSectionButton').css({"display":"block"});
+        $('#submitButton').css({"display":"none"});
+        displayObjectInstancesToAnnotate();
+
+        labels = new Array();
+        for (var i = 0; i < instances.length; i++){
+            labels.push(instances[i].completeObjectInstanceName);
+        }
+
+        currentSection = "groundings";
+        if (instances.length > 0 && firstGrounding){
+            firstGrounding = false;
+            console.log("log label");
+            console.log(instances[0].completeObjectInstanceName,hexToRGB(instances[0].color));
+            $("#saveBoundingBoxButton").css({"display":"none"});
+            annotatorPre.clear_all();
+            annotatorPnr.clear_all();
+            annotatorPost.clear_all();
+
+            $(".annotated_bounding_box").css("border",hexToRGB(instances[0].color));
+            currSelectedObject = instances[0].completeObjectInstanceName;
+            enableBBAnnotation = true;
+            annotatorPre.labels = currSelectedObject;
+            annotatorPnr.labels = currSelectedObject;
+            annotatorPost.labels = currSelectedObject;
+
+            var button = document.getElementById("object-instance-button-"+""+instances[0].completeObjectInstanceName);
+            button.setAttribute("class", "btn btn-success btn-circle");
+        }
+        updateProgressBar(100);
+    }
+
+    function showCurrentSection(){
+        if (JSON.stringify(currentSection) === JSON.stringify("roles")){ showRolesSection(); }
+        else { showGroundingsSection();}
+    }
+
+    function totalReset(){
+        showRolesSection();
+        resetBoundingBoxes();
+        resetRoleAnnotations();
+        firstGrounding = true;
+        roles = new Array();
+        instances = new Array();
+        selectedRoles = new Array();
+        frames = new Array();
+        annotations = new Array();
+        candidateRoles = selected_narration.narration_roles;
+        currSelectedObject = null;
+        enableBBAnnotation = false;
+        currentRole = null;
+        selectedObject = null;
+        currObjInstance = null;
+        rolesQuestionListAlreadyCreated = false; 
+        selectedRolesButtonsAlreadyCreated = false;
+        labels = null;
+        flagRoleToGrounding = false;
+
+        numObjGrounded = 0;
+		roleSelectionConverged = false;
+        groundingConverged = false;
+		commentary = false;
+		newverb = "none";
+		newnoun = "none";
+		objsGrounded = new Set();
+        $("#narration-rows > button").addClass("btn btn-outline-success btn-lg justify-content-center align-items-center align-content-center align-self-center");
+        document.getElementById("current-narration-paragraph").innerHTML = selected_narration.narration_base_text;
+        document.getElementById("edited-narration").innerHTML =selected_narration.narration_base_text;
+        document.getElementById("add-role-button").style.display = "block";
+    }
+
+    function showInstructions(){
+        if (JSON.stringify(currentSection) === JSON.stringify("roles")){
+            document.getElementById("instruction-container-roles-section").style.display = "block";
+            document.getElementById("instruction-container-groundings-section").style.display = "none";
+        }
+        else {
+            document.getElementById("instruction-container-roles-section").style.display = "none";
+            document.getElementById("instruction-container-groundings-section").style.display = "block";
+        }
+    }
+
+    function hideInstructions(){
+        document.getElementById("instruction-container-roles-section").style.display = "none";
+        document.getElementById("instruction-container-groundings-section").style.display = "none";
+    }
+
+    function showButton(buttonId){
+        document.getElementById(buttonId).style.display = "block";
+    }
+    function hideButton(buttonId){
+        document.getElementById(buttonId).style.display = "none";
+    }
+
+    function checkIfObjectToGround(){ // Returns TRUE if there's at least 1 object which is not tool and not hand
+		console.log("checkIfObjectToGround, objectList", JSON.stringify(objectList))
+        for (var i=0; i<objectList.length; i++){
+            if (!toolsNames.includes(objectList[i].replace('"',"").replace('"',"")) && !objectList[i].endsWith('hand"') && !objectList[i].endsWith('hands"')){
+                return true;
+            }
+        }
+        return false;
+    }
+	
+	function checkIfObjectHandsOnly(){
+	// Function, which helps to identify cases where we should SHOW submit button, but HIDE next section button
+        for (var i=0; i<objectList.length; i++){
+            if (!objectList[i].endsWith('hands"') && !objectList[i].endsWith('hand"')){
+                return false;
+            }
+        }
+        return false;
+    }
+
+    function finishRoleSelectionTask(){
+	
+        if (checkIfObjectToGround()){
+			showButton('nextSectionButton');
+            hideButton("submitButton");
+        }
+        else{
+			showButton("submitButton");
+			hideButton("nextSectionButton");
+        }
+        hideButton('add-role-button');
+        showButton('remove-roles-button');
+    }
+
+    $(document).ready(function () {
+        hideButton("nextSectionButton");
+        hideButton("prevSectionButton");
+        hideButton("submitButton");
+        hideButton("remove-roles-button");
+
+        document.addEventListener('all-crowd-elements-ready', function(event) {
+
+            $("#bbox_annotator_pre").on("click",function(e){
+				if (!enableBBAnnotation){
+					alert("Error: select an object before drawing the bounding box");
+					annotatorPre.clear_all();
+				}
+            });
+            $("#bbox_annotator_pnr").on("click",function(e){
+                if (!enableBBAnnotation){
+                    alert("Error: select an object before drawing the bounding box");
+                    annotatorPnr.clear_all();
+                }
+            });
+            $("#bbox_annotator_post").on("click",function(e){
+                if (!enableBBAnnotation){
+                    alert("Error: select an object before drawing the bounding box");
+                    annotatorPost.clear_all();
+                }
+            });
+            showRolesSection();
+        });
+    });
+</script>

@@ -1,0 +1,11 @@
+{
+    "with" : "How does the CW <VERB> the <DOBJ>?",
+    "on" : "On what object does the CW <VERB> the <DOBJ>?",
+    "in" : "In what object does the CW <VERB> the <DOBJ>?",
+    "from" : "Where does the CW <VERB> the <DOBJ> from?",
+    "to": "Where does the CW <VERB> the <DOBJ> to?",
+    "under" : "Under what object does the CW <VERB> the <DOBJ>?",
+    "into" : "What object does the CW <VERB> the <DOBJ> into?",
+    "against" : "What does the CW <VERB> the <DOBJ> against?",
+    "through" : "Through what does the CW <VERB> the <DOBJ>?"
+}

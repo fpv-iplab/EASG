@@ -1,0 +1,390 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="utf-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>EASG Validation Tool</title>
+    <script src="https://assets.crowd.aws/crowd-html-elements.js"></script>
+    <!-- <script src='https://cdnjs.cloudflare.com/ajax/libs/bootstrap/5.1.3/js/bootstrap.min.js'></script>
+    <script src='https://cdnjs.cloudflare.com/ajax/libs/jquery/3.6.0/jquery.min.js'></script> -->
+    <script src="https://easg-bucket-data-collection.s3.amazonaws.com/web/static/js/jquery.min.js"></script>
+    <script src="https://easg-bucket-data-collection.s3.amazonaws.com/web/static/js/bbox_annotator.js"></script>
+    <script src="https://easg-bucket-data-collection.s3.amazonaws.com/web/static/js/nouns.js"></script>
+    <script src="https://easg-bucket-data-collection.s3.amazonaws.com/web/static/bootstrap/js/bootstrap.min.js"></script>
+    <link rel="stylesheet" href="https://easg-bucket-data-collection.s3.amazonaws.com/web/static/bootstrap/css/bootstrap.min.css">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/4.7.0/css/font-awesome.min.css">
+
+    <!-- <link rel="stylesheet" href="https://easg-bucket-data-collection.s3.amazonaws.com/web/static/css/styles.css"> -->
+</head>
+
+<body>
+    <header></header>
+    <div>
+        <nav class="navbar navbar-light navbar-expand-md bg-light navigation-clean">
+            <div class="container"><a class="navbar-brand" href="#">EASG Validation: Look at the Frames and/or Video Clip and Answer the Question(s)</a>
+                <button class="navbar-toggler" data-toggle="collapse" data-target="#navcol-1">
+                    <span class="sr-only">Toggle navigation</span>
+                    <span class="navbar-toggler-icon"></span>
+                </button>
+                <div class="collapse navbar-collapse" id="navcol-1">
+                </div>
+            </div>
+        </nav>
+    </div>
+    <main></main>
+    <div>
+        <div class="container">
+            <div class="row" style="margin-top: 40px;">
+                <div class="col-md-4">
+                    <canvas id="preFrameCanvas" src="" width="360px" height="270px" style="background: url('{{ task.input.srcImages.preFrame.s3Uri | grant_read_access }}'); background-size: cover; width: 360px; height: 270px; border: 2px solid rgb(142, 137, 137);"></canvas>
+                </div>
+                <div class="col-md-4">
+                    <canvas id="pnrFrameCanvas" src="" width="360px" height="270px" style="background: url('{{ task.input.srcImages.pnrFrame.s3Uri | grant_read_access }}'); background-size: cover; width: 360px; height: 270px; border: 2px solid rgb(142, 137, 137);"></canvas>
+                </div>
+                <div class="col-md-4">
+                    <canvas id="postFrameCanvas" src="" width="360px" height="270px" style="background: url('{{ task.input.srcImages.postFrame.s3Uri | grant_read_access }}'); background-size: cover; width: 360px; height: 270px; border: 2px solid rgb(142, 137, 137);"></canvas>
+                </div>
+            </div>
+        </div>
+		
+		<div class="container" style="margin-top:50px;margin-bottom:20px;">
+			<div id="questionContainer" class="row justify-content-center">
+				<div class="col-md-8">
+					<form id="questionForm">
+						<h6 id="questionText"></h6>
+						<div id="answerOptions" class="form-group"></div>
+						<button id='confirmButton' class="btn btn-primary" type="button" onclick="confirmAnswer()">Confirm</button>
+					</form>
+				</div>
+			</div>
+		</div>
+
+    </div>
+    <footer class="d-flex justify-content-center align-items-center" style="width:100%;height:80px;position:static;bottom:0;background-color:#e7dec7;">
+        <button id='resetButton' class="btn btn-danger" type="reset" onclick="reset()">Reset</button>
+        <button id='submitButton' class="btn btn-warning" type="submit" disabled="true" style="display:none;" onclick="handleSubmit()">Submit</button>
+        <button class="btn btn-info" type="button" data-toggle="modal" data-target="#modal1" onclick="playActionClip('{{ task.input.fps }}', 'modal_video_2')"><i class="fa fa-play" aria-hidden="true"></i> Clip</button>
+    </footer>
+
+    <div class="modal fade" id="modal1" role="dialog" tabindex="-1">
+        <div class="modal-dialog" role="document">
+            <div class="modal-content">
+                <div class="modal-header">
+                    {% assign clipUid = task.input.srcImages.preFrame.s3Uri | split: "/" | last | split: "_" | first %}
+                    <h6 class="modal-title">Clip: <em id="clip-uid">{{ clipUid }}</em> </h6><button type="button" class="close" data-dismiss="modal" aria-label="Close"><span aria-hidden="true">×</span></button></div>
+                <div class="modal-body">
+                    <video id="modal_video_2" width="100%" preload="auto" muted controls="false">
+                        <source src="{{ task.input.clipS3Uri | grant_read_access }}" type="video/mp4"/>
+                        <source src="{{ task.input.clipS3Uri | grant_read_access }}" type="video/webm"/>
+                        <source src="{{ task.input.clipS3Uri | grant_read_access }}" type="video/ogg"/>
+                        Your browser does not support the video tag.
+                    </video>
+                </div>
+                <div class="modal-footer">
+                    <button id="playVideoButton" class="btn btn-info" type="button" onclick="playActionClip('{{ task.input.fps }}', 'modal_video_2')">Play</button>
+                    <button class="btn btn-light" type="button" data-dismiss="modal">Close</button>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <crowd-form style="display: none;">
+        <input name="timeElapsed" id="timeElapsed" type="hidden">
+        <input name="taskObject" id="taskObject" type="hidden">
+        <input name="videoUid" id="videoUid" type="hidden">
+        <input name="fps" id="fps" type="hidden">
+        <input name="srcImages" id="srcImages" type="hidden">
+        <input name="clipS3Uri" id="clipS3Uri" type="hidden">
+        <input name="clipUid" id="clipUid" type="hidden">
+		<input name="responses" id="responses" type="hidden">
+		<input name="contradictions" id="contradictions" type="hidden">
+        <crowd-button form-action="submit" style="display: none;"></crowd-button>
+    </crowd-form>
+    
+</body>
+
+</html>
+
+<script>
+
+	//console.log(task.input.questions)
+    var imageHeight = null;
+    var imageWidth = null; 
+    var pnrFrameNumber = null;
+	
+	pnrFrameNumber = "{{ task.input.pnrFrameNumber }}".replace(/&quot;/g,'"');
+
+    // Frame URIs
+    var preFrameUri = "{{ task.input.srcImages.preFrame.s3Uri | grant_read_access }}".replace(/&amp;/g, "&");
+    var pnrFrameUri = "{{ task.input.srcImages.pnrFrame.s3Uri | grant_read_access }}".replace(/&amp;/g, "&");
+    var postFrameUri = "{{ task.input.srcImages.postFrame.s3Uri | grant_read_access }}".replace(/&amp;/g, "&");
+
+    // Task Object 
+    var taskObject = "{{ task.input.taskObject }}".replace(/&quot;/g,'"');
+
+    // Video UID
+    var videoUid = "{{ task.input.video_uid }}".replace(/&quot;/g,'"');
+
+
+    // Fps
+    var fps = "{{ task.input.fps }}".replace(/&quot;/g,'"');
+
+    // Src Images
+    var srcImages = JSON.parse('{{ task.input.srcImages }}'.replace(/&quot;/g,'"'));
+
+    // Clip S3 Uri 
+    var clipS3Uri = "{{ task.input.clipS3Uri }}".replace(/&quot;/g,'"');
+    var clipUid = "{{ task.input.clipUid }}".replace(/&quot;/g,'"');
+	
+	var currentQuestionIndex = 0;
+	//var questions = Object.values(taskInput.questions); // Adjust according to how you access your taskInput
+	//var srcImages = JSON.parse('{{ task.input.srcImages }}'.replace(/&quot;/g,'"'));
+	var questionsObj = JSON.parse('{{ task.input.questions }}'.replace(/&quot;/g,'"'));
+	var questions = Object.values(questionsObj);
+	var responses = [];
+	
+	var contradictions = JSON.parse('{{ task.input.contradictions }}'.replace(/&quot;/g,'"'));
+	
+	console.log(questions)  
+
+    function drawBBs(){
+        var canvasPreFrame = document.getElementById("preFrameCanvas");
+        var canvasPnrFrame = document.getElementById("pnrFrameCanvas");
+        var canvasPostFrame = document.getElementById("postFrameCanvas");
+
+        var ctxPreFrame = canvasPreFrame.getContext("2d");
+        var ctxPnrFrame = canvasPnrFrame.getContext("2d");
+        var ctxPostFrame = canvasPostFrame.getContext("2d");
+
+        if (imageHeight == 1080 && imageWidth == 1920){
+            document.getElementById("preFrameCanvas").style.height = "216px";
+            document.getElementById("preFrameCanvas").style.width = "384px";
+            document.getElementById("pnrFrameCanvas").style.height = "216px";
+            document.getElementById("pnrFrameCanvas").style.width = "384px";
+            document.getElementById("postFrameCanvas").style.height = "216px";
+            document.getElementById("postFrameCanvas").style.width = "384px";
+        }
+        else {
+            document.getElementById("preFrameCanvas").style.height = "270px";
+            document.getElementById("preFrameCanvas").style.width = "360px";
+            document.getElementById("pnrFrameCanvas").style.height = "270px";
+            document.getElementById("pnrFrameCanvas").style.width = "360px";
+            document.getElementById("postFrameCanvas").style.height = "270px";
+            document.getElementById("postFrameCanvas").style.width = "360px";
+        }
+        
+        var canvasPreFrameWidth = canvasPreFrame.width;
+        var canvasPreFrameHeight = canvasPnrFrame.height;
+        var canvasPnrFrameWidth = canvasPnrFrame.width;
+        var canvasPnrFrameHeight = canvasPnrFrame.height;
+        var canvasPostFrameWidth = canvasPostFrame.width;
+        var canvasPostFrameHeight = canvasPostFrame.height;
+
+        for (let index = 0; index < annotations.length; index++) {
+            const element = annotations[index];
+            var annotationItem = element.groundings;
+            if (annotationItem["pre_frame"] !== undefined) {
+                for (let bbAnnotationCounter = 0; bbAnnotationCounter < annotationItem["pre_frame"].length; bbAnnotationCounter++) {
+                    const bbInfo = annotationItem["pre_frame"][bbAnnotationCounter];
+                    var res = recalculateCoords(bbInfo.left,bbInfo.top,bbInfo.width,bbInfo.height,canvasPreFrameWidth,canvasPreFrameHeight,imageWidth,imageHeight);
+                    
+                    var newX = res.nx;
+                    var newY = res.ny;
+                    var newWidth = res.nw;
+                    var newHeight = res.nh;
+                    
+                    var objName = bbInfo.object.object_name+":"+bbInfo.object.instance_num.toString();
+                    var color = getBBColor(objName);
+                    
+                    ctxPreFrame.beginPath();
+                    ctxPreFrame.lineWidth = "2";
+                    ctxPreFrame.font = "15px Arial";
+                    ctxPreFrame.fillStyle = color;
+                    ctxPreFrame.strokeStyle = color;
+                    ctxPreFrame.rect(newX,newY,newWidth,newHeight);
+                    ctxPreFrame.fillText(objName, newX, newY);
+                    ctxPreFrame.stroke();
+                }
+                
+            }
+            if (annotationItem["pnr_frame"] !== undefined) {
+                for (let bbAnnotationCounter = 0; bbAnnotationCounter < annotationItem["pnr_frame"].length; bbAnnotationCounter++) {
+                    const bbInfo = annotationItem["pnr_frame"][bbAnnotationCounter];
+                    var res = recalculateCoords(bbInfo.left,bbInfo.top,bbInfo.width,bbInfo.height,canvasPnrFrameWidth,canvasPnrFrameHeight,imageWidth,imageHeight);
+                    
+                    var newX = res.nx;
+                    var newY = res.ny;
+                    var newWidth = res.nw;
+                    var newHeight = res.nh;
+                    
+                    var objName = bbInfo.object.object_name+":"+bbInfo.object.instance_num.toString();
+                    var color = getBBColor(objName);
+
+                    ctxPnrFrame.beginPath();
+                    ctxPnrFrame.lineWidth = "2";
+                    ctxPnrFrame.font = "15px Arial";
+                    ctxPnrFrame.fillStyle = color;
+                    ctxPnrFrame.strokeStyle = color;
+                    ctxPnrFrame.rect(newX,newY,newWidth,newHeight);
+                    ctxPnrFrame.fillText(objName, newX, newY);
+                    ctxPnrFrame.stroke();
+                }
+                
+            }
+            if (annotationItem["post_frame"] !== undefined) {
+                for (let bbAnnotationCounter = 0; bbAnnotationCounter < annotationItem["post_frame"].length; bbAnnotationCounter++) {
+                    const bbInfo = annotationItem["post_frame"][bbAnnotationCounter];
+                    var res = recalculateCoords(bbInfo.left,bbInfo.top,bbInfo.width,bbInfo.height,canvasPostFrameWidth,canvasPostFrameHeight,imageWidth,imageHeight);
+                    
+                    var newX = res.nx;
+                    var newY = res.ny;
+                    var newWidth = res.nw;
+                    var newHeight = res.nh;
+                    
+                    var objName = bbInfo.object.object_name+":"+bbInfo.object.instance_num.toString();
+                    var color = getBBColor(objName);
+
+                    ctxPostFrame.beginPath();
+                    ctxPostFrame.lineWidth = "2";
+                    ctxPostFrame.font = "15px Arial";
+                    ctxPostFrame.fillStyle = color;
+                    ctxPostFrame.strokeStyle = color;
+                    ctxPostFrame.rect(newX,newY,newWidth,newHeight);
+                    ctxPostFrame.fillText(objName, newX, newY);
+                    ctxPostFrame.stroke();
+                }
+                
+            }
+        }
+    }
+
+    function recalculateCoords(x,y,w,h,cw,ch,iw,ih){
+        var nx = (x*cw)/iw;
+        var ny = (y*ch)/ih;
+        var nw = (w*cw)/iw;
+        var nh = (h*ch)/ih;
+        return {'nx':nx,'ny':ny,'nw':nw,'nh':nh}
+
+    }
+
+    function getBBColor(obj){
+        var color = "black";
+        if (JSON.stringify(obj) === JSON.stringify(object_of_change)){
+            color = "#FFAC1C";
+        } 
+        else {
+            color = "#4A8";
+        }
+        return color;
+    }
+
+    function playActionClip(fps, video_id) {
+        var video_id = video_id;
+        var videoplayer = document.getElementById(video_id);
+        var startTime = (pnrFrameNumber/fps) - 2;
+        var endTime = (pnrFrameNumber/fps) + 2;
+        ts = (pnrFrameNumber/fps);
+        videoplayer.currentTime = startTime; 
+        videoplayer.play();
+        videoplayer.removeAttribute("controls");
+
+        //call function to stop player after given interval
+        var stopVideoAfter = (endTime - startTime) * 1000;  //* 1000, because Timer is in ms
+        setTimeout(function(){
+            document.getElementById(video_id).pause();
+            }, stopVideoAfter);
+    }
+    
+	function displayCurrentQuestion() {
+		console.log(currentQuestionIndex)
+		console.log(questions.length)
+		if (currentQuestionIndex >= questions.length) {
+			// Finalize and potentially hide the form, enable submit, etc.
+			document.getElementById('questionForm').style.display = 'none'; // Hide the question form
+			document.getElementById('submitButton').disabled = false; // Enable the Submit button
+			document.getElementById('submitButton').style.display = 'block';
+			//alert('All questions answered.');
+			return;
+		}
+
+		let question = questions[currentQuestionIndex];
+		document.getElementById('questionText').innerText = question.question;
+		let answerOptions = document.getElementById('answerOptions');
+		answerOptions.innerHTML = ''; // Clear previous options
+
+		question.answers.forEach((answer, index) => {
+			// Create radio button for each answer
+			let label = document.createElement('label');
+			label.className = 'form-check-label';
+			
+			let radioButton = document.createElement('input');
+			radioButton.type = 'radio';
+			radioButton.className = 'form-check-input';
+			radioButton.name = 'answers';
+			radioButton.value = answer;
+			radioButton.id = 'answer' + index;
+
+			label.appendChild(radioButton);
+			label.append(answer);
+
+			answerOptions.appendChild(label);
+			answerOptions.appendChild(document.createElement('br')); // Line break for spacing
+		});
+	}
+	
+	function confirmAnswer() {
+		let selectedAnswer = document.querySelector('input[name="answers"]:checked');
+		if (selectedAnswer) { // Ensure an answer is selected
+			let answerIndex = Array.from(document.querySelectorAll('input[name="answers"]')).indexOf(selectedAnswer);
+			responses.push({ questionIdx: currentQuestionIndex, answer: selectedAnswer.value, answerIdx: answerIndex });
+			
+			currentQuestionIndex++;
+			displayCurrentQuestion();
+		} else {
+			alert("Please select an answer before confirming.");
+		}
+	}
+
+	function createAnswerButton(answerText, questionIdx) {
+		let button = document.createElement('button');
+		button.className = 'btn btn-primary';
+		button.innerText = answerText;
+		button.addEventListener('click', function() { handleAnswer(questionIdx, answerText); });
+		return button;
+	}
+
+	function handleAnswer(questionIdx, answerText) {
+		responses.push({questionIdx: questionIdx, answer: answerText});
+
+		if (questions[currentQuestionIndex].type === 1 && questions[currentQuestionIndex].possible_answers.indexOf(answerText) !== 0) {
+			// Skip questions of type 2 and 3 if not the first answer
+			do {
+				currentQuestionIndex++;
+			} while (currentQuestionIndex < questions.length && [2, 3].includes(questions[currentQuestionIndex].type));
+		} else {
+			currentQuestionIndex++;
+		}
+
+		displayCurrentQuestion();
+	}
+
+$(document).ready(function() {
+    displayCurrentQuestion();
+});
+
+	
+    function handleSubmit(){
+        console.log("submit");
+		document.getElementById('taskObject').value = JSON.stringify(taskObject);
+        document.getElementById('videoUid').value = JSON.stringify(videoUid);
+		document.getElementById('responses').value = JSON.stringify(responses);
+		document.getElementById('contradictions').value = JSON.stringify(contradictions);
+        document.querySelector('crowd-form').submit();
+    }
+
+	$(document).ready(function () {
+		document.getElementById('submitButton').style.display = 'none';
+        displayCurrentQuestion();
+    });
+</script>

@@ -1,0 +1,10 @@
+{
+    "on" : "Does the CW <VERB> the <DOBJ> on another object?",
+    "in" : "Does the CW <VERB> the <DOBJ> in another object?",
+    "from" : "Does the CW <VERB> the <DOBJ> from another object?",
+    "to": "Does the CW <VERB> the <DOBJ> to another object?",
+    "under" : "Does the CW <VERB> the <DOBJ> under another object?",
+    "into" : "Does the CW <VERB> the <DOBJ> into another object?",
+    "against" : "Does the CW <VERB> the <DOBJ> against another object?",
+    "through" : "Does the CW <VERB> the <DOBJ> through another object?"
+}
