@@ -10,7 +10,7 @@ Rodin, Ivan, Antonino Furnari, Kyle Min, Subarna Tripathi, and Giovanni Maria Fa
 
 ## Overview
 This repository provides the following components:
- * The Ego-EASG dataset, containing graph annotations, frames and object groundings: [Download](INSERT_LINK)
+ * The Ego-EASG dataset, containing graph annotations with object groundings and PRE, PNR, POST frames: [Download](https://iplab.dmi.unict.it/sharing/EASG/EASG.zip)
  * Code to prepare the dataset for the annotation procedure
  * Code for the EASG Annotation Tool
  * Code for the EASG Generation baseline
@@ -48,16 +48,17 @@ To run the graph generation baseline, run the script:
 
 `python run_easg.py annts_in_new_format data your_output_folder`
 
-This script relies on the annotations adjusted for SGG purposes stored in `easg-generation/annts_in_new_format/` and on objects RoI and verbs features stored in `easg-generation/data/`
+The `data` folder should contain
+* [Verb features](https://iplab.dmi.unict.it/sharing/EASG/verb_features.pt)
+* [RoI object features for train set](https://iplab.dmi.unict.it/sharing/EASG/roi_feats_train.pkl)
+* [RoI object features for validation set](https://iplab.dmi.unict.it/sharing/EASG/roi_feats_val.pkl)
 
-The code for extracting object and verb features is provided in `easg-generation/utils/`.
+This script also relies on the annotations in the format adjusted for SGG purposes stored in `easg-generation/annts_in_new_format/`.
 
-Verb features are based on [Ego4D SlowFast features](https://ego4d-data.org/docs/data/features/).
+The code for extracting object and verb features is provided in `easg-generation/utils/`. Verb features are based on [Ego4D SlowFast features](https://ego4d-data.org/docs/data/features/). Object features are based on detections of [Faster-RCNN model](https://github.com/facebookresearch/detectron2/blob/main/configs/COCO-Detection/faster_rcnn_R_50_FPN_3x.yaml), trained on our Ego4D-EASG dataset
 
-Object features are based on detections of [Faster-RCNN model](https://github.com/facebookresearch/detectron2/blob/main/configs/COCO-Detection/faster_rcnn_R_50_FPN_3x.yaml), trained on our Ego4D-EASG dataset
-
-## Note
-This is the version 1.0 of the dataset, and it contains the graphs obtained from Ego4D-SCOD benchmark for videos collected by UNICT.
+### Note
+This is the version 1.0 of the dataset, and it contains the graphs obtained from Ego4D-SCOD benchmark for videos collected by University of Catania (UNICT).
 Currently, we are working on extending the dataset to include annotations for videos recorded by other institutions.
 
 If you use the code/models hosted in this repository, please cite the following paper:
