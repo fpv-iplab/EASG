@@ -1,5 +1,7 @@
 # Action Scene Graphs for Long-Form Understanding of Egocentric Videos
 
+![image](https://github.com/fpv-iplab/EASG/assets/17033647/e38d266b-ba22-4fff-98b7-29046ec2611d)
+
 
 This repository hosts the code related to the paper
 
