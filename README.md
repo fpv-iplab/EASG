@@ -5,7 +5,7 @@
 
 This repository hosts the code related to the paper
 
-Rodin, Ivan, Antonino Furnari, Kyle Min, Subarna Tripathi, and Giovanni Maria Farinella. "Action Scene Graphs for Long-Form Understanding of Egocentric Videos." Computer Vision and Pattern Recognition Conference (CVPR). 2024.
+Ivan Rodin*, Antonino Furnari*, Kyle Min*, Subarna Tripathi, and Giovanni Maria Farinella. "Action Scene Graphs for Long-Form Understanding of Egocentric Videos." Computer Vision and Pattern Recognition Conference (CVPR). 2024.
 
 [arXiv pre-print](https://arxiv.org/pdf/2312.03391.pdf)
 
@@ -16,6 +16,9 @@ This repository provides the following components:
  * Code to prepare the dataset for the annotation procedure
  * Code for the EASG Annotation Tool
  * Code for the EASG Generation baseline
+
+#### + Example video with dynamic graphs and object bounding boxes
+[![video](http://markdown-videos-api.jorgenkh.no/youtube/Qx3UHbl08K4?width=640&height=360)](https://youtu.be/Qx3UHbl08K4)
 
 ## EASG Labeling system
 
@@ -32,10 +35,10 @@ Steps to reproduce the EASG labeling system:
 
 To create the custom labeling workflow in AWS SageMaker, please refer to [official documentation](https://docs.aws.amazon.com/sagemaker/latest/dg/sms-custom-templates.html).
 
-2.1 To set-up the annotation procedure (first stage annotation), it is necessary to provide:
-* Pre-condition Lambda function which creates the Human Intelligence Task (HIT)
+2.1 To set up the annotation procedure (first stage annotation), it is necessary to provide:
+* Pre-condition Lambda function, which creates the Human Intelligence Task (HIT)
 `easg-labeling-system/easg-annotation/PRE-EASG`
-* Consolidation Lambda function which consolidates annotations from workers
+* Consolidation Lambda function, which consolidates annotations from workers
 `easg-labeling-system/easg-annotation/ACS-EASG`
 * Custom web-page template and interface logic
 `easg-labeling-system/easg-annotation/index.liquid.html`
@@ -60,12 +63,12 @@ This script also relies on the annotations in the format adjusted for SGG purpos
 The code for extracting object and verb features is provided in `easg-generation/utils/`. Verb features are based on [Ego4D SlowFast features](https://ego4d-data.org/docs/data/features/). Object features are based on detections of [Faster-RCNN model](https://github.com/facebookresearch/detectron2/blob/main/configs/COCO-Detection/faster_rcnn_R_50_FPN_3x.yaml), trained on our Ego4D-EASG dataset
 
 ### Note
-This is the version 1.0 of the dataset, and it contains the graphs obtained from Ego4D-SCOD benchmark for videos collected by University of Catania (UNICT).
+This is the version 1.0 of our dataset, and it contains the graphs obtained from Ego4D-SCOD benchmark for videos collected by University of Catania (UNICT).
 Currently, we are working on extending the dataset to include annotations for videos recorded by other institutions.
 
 If you use the code/models hosted in this repository, please cite the following paper:
 
-```
+```bibtex
 @article{rodin2023action,
   title={Action Scene Graphs for Long-Form Understanding of Egocentric Videos},
   author={Rodin, Ivan and Furnari, Antonino and Min, Kyle and Tripathi, Subarna and Farinella, Giovanni Maria},
