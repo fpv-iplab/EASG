@@ -69,11 +69,12 @@ Currently, we are working on extending the dataset to include annotations for vi
 If you use the code/models hosted in this repository, please cite the following paper:
 
 ```bibtex
-@article{rodin2023action,
+@inproceedings{rodin2024action,
   title={Action Scene Graphs for Long-Form Understanding of Egocentric Videos},
   author={Rodin, Ivan and Furnari, Antonino and Min, Kyle and Tripathi, Subarna and Farinella, Giovanni Maria},
-  journal={arXiv preprint arXiv:2312.03391},
-  year={2023}
+  booktitle={Proceedings of the IEEE/CVF Conference on Computer Vision and Pattern Recognition},
+  pages={18622--18632},
+  year={2024}
 }
 ```
 
