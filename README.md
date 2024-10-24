@@ -48,19 +48,7 @@ To create the custom labeling workflow in AWS SageMaker, please refer to [offici
 
 
 ## Graph Generation baseline
-
-To run the graph generation baseline, run the script:
-
-`python run_easg.py annts_in_new_format data your_output_folder`
-
-The `data` folder should contain
-* [Verb features](https://iplab.dmi.unict.it/sharing/EASG/verb_features.pt)
-* [RoI object features for train set](https://iplab.dmi.unict.it/sharing/EASG/roi_feats_train.pkl)
-* [RoI object features for validation set](https://iplab.dmi.unict.it/sharing/EASG/roi_feats_val.pkl)
-
-This script also relies on the annotations in the format adjusted for SGG purposes stored in `easg-generation/annts_in_new_format/`.
-
-The code for extracting object and verb features is provided in `easg-generation/utils/`. Verb features are based on [Ego4D SlowFast features](https://ego4d-data.org/docs/data/features/). Object features are based on detections of [Faster-RCNN model](https://github.com/facebookresearch/detectron2/blob/main/configs/COCO-Detection/faster_rcnn_R_50_FPN_3x.yaml), trained on our Ego4D-EASG dataset
+Please refer to the instructions in [GETTING_STARTED.md](easg-generation/GETTING_STARTED.md).
 
 ### Note
 This is the version 1.0 of our dataset, and it contains the graphs obtained from Ego4D-SCOD benchmark for videos collected by University of Catania (UNICT).
