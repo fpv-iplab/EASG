@@ -1,0 +1,17 @@
+{
+  "sta": {
+    "system_prompt": "You are an assistant which models human behaviour very well. You'll be provided with a sequence of graphs (1..N-1) describing the actions retrieved from a first-person view video. Your task is to predict the next graph (N).",
+    "input": "Example:\nGraph 1: Camera wearer - verb - take; take - direct object - flour; take - from - package; take - with - right hand\nGraph 2: Camera wearer - verb - add; add - direct object - flour; add - to - bowl; bowl - with - dough; add - with - right hand\nGraph 3: Camera wearer - verb - press; press - direct object - dough; press - with - both hands\nGraph 4: Camera wearer - verb - move; move - direct object - dough; move - from - bowl; move - to - scale\nGraph 5: Camera wearer - verb - move; move - direct object - dough; move - from - bowl; move - to - scale",
+    "completion": "Prediction:\nGraph 6: Camera wearer - verb - remove; remove - direct object - dough; remove - from - scale; remove - to - bowl"
+  },
+  "summarization": {
+    "system_prompt": "You are an assistant which models human behaviour very well. You'll be provided with a sequence of verb-noun pairs (1..N-1) describing the actions retrieved from a first-person view video. Your task is to predict the next action (N).",
+    "input": "Example:\nAction 1: take flour\nAction 2: add flour\nAction 3: press dough\nAction 4: move dough\nAction 5: put dough",
+    "completion": "Prediction:\nAction 6: remove dough"
+  },
+  "lta": {
+    "system_prompt": "You are an assistant which models human behaviour very well. You'll be provided with a sequence of graphs (1..N-1) describing the actions retrieved from a first-person view video. Your task is to predict the next five graphs (N..N+4).",
+    "input": "Example:\nGraph 1: Camera wearer - verb - take; take - direct object - flour; take - from - package; take - with - right hand\nGraph 2: Camera wearer - verb - add; add - direct object - flour; add - to - bowl; bowl - with - dough; add - with - right hand\nGraph 3: Camera wearer - verb - press; press - direct object - dough; press - with - both hands\nGraph 4: Camera wearer - verb - move; move - direct object - dough; move - from - bowl; move - to - scale\nGraph 5: Camera wearer - verb - move; move - direct object - dough; move - from - bowl; move - to - scale",
+    "completion": "Prediction:\nGraph 6: Camera wearer - verb - remove; remove - direct object - dough; remove - from - scale; remove - to - bowl\nGraph 7: Camera wearer - verb - weigh; weigh - direct object - dough; weigh - on - scale\nGraph 8: Camera wearer - verb - cut; cut - direct object - dough; cut - with - knife\nGraph 9: Camera wearer - verb - pick up; pick up - direct object - dough piece; pick up - with - right hand\nGraph 10: Camera wearer - verb - place; place - direct object - dough piece; place - on - tray"
+  }
+}
