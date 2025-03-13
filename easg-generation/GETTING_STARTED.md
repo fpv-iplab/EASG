@@ -15,7 +15,8 @@ The code for extracting object and verb features is provided in `easg-generation
 ### STTran
 This baseline builds on the original [STTran repository](https://github.com/yrcong/STTran). Please follow the instructions for requirements or other preparation.
 
-To run the graph generation baseline using STTran, run the script:
+First, download the [Faster-RCNN checkpoint that is pre-trained on EASG](https://drive.google.com/file/d/1a4De-5kmQFm6kngGBRovnMlMygzI7fOl/view?usp=drive_link) and put it under `fasterRCNN/models/res101/easg`. 
+Then, run the graph generation baseline with STTran as follows:
 
 `python train_with_EASG.py -mode $MODE -data_path $DATAPATH`
 
