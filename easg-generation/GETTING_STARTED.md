@@ -10,12 +10,12 @@ To run the graph generation baseline using task-specific FCs, run the script:
 
 This script also relies on the annotations in the format adjusted for SGG purposes stored in `easg-generation/annts_in_new_format/`.
 
-The code for extracting object and verb features is provided in `easg-generation/utils/`. Verb features are based on [Ego4D SlowFast features](https://ego4d-data.org/docs/data/features/). Object features are based on detections of [Faster-RCNN model](https://github.com/facebookresearch/detectron2/blob/main/configs/COCO-Detection/faster_rcnn_R_50_FPN_3x.yaml), trained on our Ego4D-EASG dataset
+The code for extracting object and verb features is provided in `easg-generation/utils/`. Verb features are based on [Ego4D SlowFast features](https://ego4d-data.org/docs/data/features/). Object features are based on detections of [Faster-RCNN model](https://iplab.dmi.unict.it/sharing/EASG/model_final.pth), trained on our Ego4D-EASG dataset
 
 ### STTran
 This baseline builds on the original [STTran repository](https://github.com/yrcong/STTran). Please follow the instructions for requirements or other preparation.
 
-First, download the [Faster-RCNN checkpoint that is pre-trained on EASG](https://drive.google.com/file/d/1a4De-5kmQFm6kngGBRovnMlMygzI7fOl/view?usp=drive_link) and put it under `fasterRCNN/models/res101/easg`. 
+First, download the [Faster-RCNN checkpoint that is pre-trained on EASG](https://iplab.dmi.unict.it/sharing/EASG/faster_rcnn_1_11_952.pth) and put it under `fasterRCNN/models/res101/easg`. 
 Then, run the graph generation baseline with STTran as follows:
 
 `python train_with_EASG.py -mode $MODE -data_path $DATAPATH`
